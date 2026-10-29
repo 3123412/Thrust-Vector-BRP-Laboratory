@@ -282,7 +282,7 @@ namespace BRP
 
         public FlightBody Separate(bool payload=false)
         {
-            var cut=parts.FirstOrDefault(p=>!p.destroyed&&(payload?p.definition.kind==PartKind.PayloadSeparator:p.definition.kind==PartKind.StackDecoupler||p.definition.kind==PartKind.RadialDecoupler)&&p.placement.stage<=stage);
+            var cut=parts.FirstOrDefault(p=>!p.destroyed&&p.active&&(payload?p.definition.kind==PartKind.PayloadSeparator:p.definition.kind==PartKind.StackDecoupler||p.definition.kind==PartKind.RadialDecoupler)&&p.placement.stage<=stage);
             if(cut==null) { if(!payload) stage=Math.Min(5,stage+1);lastEvent="Следующая ступень";stageEvent=true;return null; }
             var ids=new HashSet<string>{cut.placement.instanceId};
             bool change;
@@ -290,14 +290,19 @@ namespace BRP
             var upper=parts.Where(p=>ids.Contains(p.placement.instanceId)).ToList();
             var lower=parts.Except(upper).ToList();
             if(upper.Count==0||lower.Count==0) return null;
-            var detached=new FlightBody(lower,this);
+            cut.active=false;
+            var retained=payload?lower:upper;
+            var released=payload?upper:lower;
+            var detached=new FlightBody(released,this);
             var previousCenter=centerOfMass;
-            parts.Clear();parts.AddRange(upper);RecalculateMass();
+            parts.Clear();parts.AddRange(retained);RecalculateMass();
             var shift=orientation.Rotate(centerOfMass-previousCenter);
             position+=shift;velocity+=orientation.Rotate(DVector3.Cross(angularVelocity,centerOfMass-previousCenter));
             var impulse=orientation.Rotate(new DVector3(0,1,0))*1500;
             velocity+=impulse/mass;detached.velocity-=impulse/detached.mass;
-            stage=Math.Min(5,stage+1);stageEvent=true;payloadReleased|=payload;
+            if(!payload) stage=Math.Min(5,stage+1);
+            else detached.throttle=0;
+            stageEvent=true;payloadReleased|=payload;
             lastEvent=payload?"Полезная нагрузка отделена":"Ступень отделена";
             return detached;
         }
@@ -315,6 +320,8 @@ namespace BRP
             double combined=mass+other.mass;
             var combinedPosition=(position*mass+other.position*other.mass)/combined;
             var combinedVelocity=(velocity*mass+other.velocity*other.mass)/combined;
+            var angularMomentum=orientation.Rotate(inertia.Multiply(angularVelocity))+other.orientation.Rotate(other.inertia.Multiply(other.angularVelocity));
+            angularMomentum+=DVector3.Cross(position-combinedPosition,velocity*mass)+DVector3.Cross(other.position-combinedPosition,other.velocity*other.mass);
             var offset=orientation.Inverse.Rotate(other.position-position);
             var relative=orientation.Inverse*other.orientation;
             foreach(var part in other.parts)
@@ -323,7 +330,8 @@ namespace BRP
                 part.placement.rotation=(relative*new DQuaternion(part.placement.rotation)).Float;
                 parts.Add(part);
             }
-            position=combinedPosition;velocity=combinedVelocity;RecalculateMass();docked=true;
+            position=combinedPosition;velocity=combinedVelocity;RecalculateMass();
+            angularVelocity=inertia.Solve(orientation.Inverse.Rotate(angularMomentum));docked=true;
             other.parts.Clear();other.landed=true;lastEvent="Стыковка выполнена";
         }
     }
