@@ -22,3 +22,5 @@ Artifacts/
 *.blend2
 .DS_Store
 Thumbs.db
+Tools/.packages/
+.cache/

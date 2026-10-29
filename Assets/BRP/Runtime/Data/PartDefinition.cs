@@ -25,6 +25,7 @@ namespace BRP
         public PartCategory category;
         public MountType mount;
         public GameObject model;
+        public Sprite thumbnail;
         public float dryMass;
         public float height;
         public float radius = 0.45f;

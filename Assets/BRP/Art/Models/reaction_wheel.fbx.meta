@@ -3,9 +3,54 @@ guid: fc90d0f2ac1aa654d83182d6ea8fca38
 ModelImporter:
   serializedVersion: 24600
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: BRP_Blue
+    second: {fileID: 2100000, guid: 05a16abb4d0a15840970ec70de850957, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: BRP_Ceramic
+    second: {fileID: 2100000, guid: 63b16ac00a2d402448b88d21d3f62b96, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: BRP_Concrete
+    second: {fileID: 2100000, guid: 7f6864ac2afbee545997cb2386c8a447, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: BRP_Copper
+    second: {fileID: 2100000, guid: 7a30ebdd7a9a3264e94c15cddc4f552e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: BRP_Glass
+    second: {fileID: 2100000, guid: 9aabda14aa7ff2a40aadaf83e60773da, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: BRP_Graphite
+    second: {fileID: 2100000, guid: 7bb165b037e4ce247a3766addd80c590, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: BRP_Orange
+    second: {fileID: 2100000, guid: 1899137591f4f8d42b06f564206ed4a5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: BRP_Silver
+    second: {fileID: 2100000, guid: c5e9a2a10b502f74980c17c800eea42d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: BRP_Solar
+    second: {fileID: 2100000, guid: fa886c8bc4d873c429952559dc314541, type: 2}
   materials:
-    materialImportMode: 2
+    materialImportMode: 1
     materialName: 0
     materialSearch: 1
     materialLocation: 1
@@ -44,8 +89,8 @@ ModelImporter:
     importPhysicalCameras: 1
     importVisibility: 1
     importBlendShapes: 1
-    importCameras: 1
-    importLights: 1
+    importCameras: 0
+    importLights: 0
     nodeNameCollisionStrategy: 1
     fileIdsGeneration: 2
     swapUVChannels: 0
@@ -85,7 +130,7 @@ ModelImporter:
     normalSmoothingSource: 0
     calculateBlendshapeNormalsDeltaFromImportedNormals: 0
   referencedClips: []
-  importAnimation: 1
+  importAnimation: 0
   humanDescription:
     serializedVersion: 3
     human: []

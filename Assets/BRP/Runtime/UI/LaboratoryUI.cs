@@ -12,89 +12,127 @@ namespace BRP
         public Canvas canvas;
         public RectTransform root;
         public TextMeshProUGUI stats,detailTitle,detailText,status,missionTitle,missionGoal,flightData,toast,phase;
-        LaboratoryGame game;
-        RectTransform left,right,bottom,modal,catalogContent;
+        [SerializeField] LaboratoryGame game;
+        [SerializeField] RectTransform left,right,bottom,modal,catalogContent,homePanel;
+        [SerializeField] TextMeshProUGUI[] craftValues;
+        [SerializeField] TextMeshProUGUI[] flightValues;
+        [SerializeField] RectTransform flightActions;
         readonly List<GameObject> workshopControls=new List<GameObject>();
-        RectTransform flightPanel;
+        [SerializeField] RectTransform flightPanel;
         PartCategory category;
-        public bool ModalOpen=>modal!=null;
+        public bool ModalOpen=>modal!=null||(homePanel!=null&&homePanel.gameObject.activeSelf);
 
         public void Initialize(LaboratoryGame owner,TMP_FontAsset font)
         {
             game=owner;UiTheme.Font=font;
-            canvas=gameObject.AddComponent<Canvas>();canvas.renderMode=RenderMode.ScreenSpaceOverlay;
+            if(root==null) BuildLayout(owner,font);
+            PopulateCatalog(PartCategory.Structure);SetFlight(false);UpdateStats();ShowHome();
+        }
+
+        public void BuildLayout(LaboratoryGame owner,TMP_FontAsset font)
+        {
+            game=owner;UiTheme.Font=font;
+            canvas=gameObject.AddComponent<Canvas>();canvas.renderMode=RenderMode.ScreenSpaceCamera;
+            canvas.worldCamera=owner.mainCamera;canvas.planeDistance=.5f;
             var scaler=gameObject.AddComponent<CanvasScaler>();scaler.uiScaleMode=CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution=new Vector2(1920,1080);scaler.matchWidthOrHeight=.5f;
             gameObject.AddComponent<GraphicRaycaster>();root=GetComponent<RectTransform>();
-            var header=UiTheme.Panel("Header",root,0,0,1920,98,UiTheme.Ink);
-            UiTheme.Panel("BrandMark",header,32,26,5,42,UiTheme.Orange);
-            UiTheme.Text(header,"ВЕКТОР ТЯГИ",52,17,420,36,30);
-            UiTheme.Text(header,"ЛАБОРАТОРИЯ BRP     /     ИНЖЕНЕРНАЯ ПРОГРАММА",53,58,600,22,12,UiTheme.Muted);
-            UiTheme.Button(header,"Миссии",1040,28,128,42,ShowMissions);
-            UiTheme.Button(header,"Чертежи",1180,28,128,42,ShowBlueprints);
-            UiTheme.Button(header,"Рекорды",1320,28,128,42,ShowRecords);
-            UiTheme.Button(header,"Помощь",1460,28,128,42,ShowHelp);
-            UiTheme.Button(header,"Настройки",1600,28,140,42,ShowSettings);
-            UiTheme.Button(header,"Меню",1752,28,128,42,ShowHome);
-            UiTheme.Divider(root,0,98,1920);
-            phase=UiTheme.Text(root,"01 / СБОРОЧНЫЙ АНГАР",390,119,650,26,15,UiTheme.Cyan);
-            status=UiTheme.Text(root,"СИСТЕМЫ В ОЖИДАНИИ",1400,113,480,24,12,UiTheme.Muted);status.alignment=TextAlignmentOptions.Right;
-            left=UiTheme.Panel("Catalog",root,28,144,330,762);
-            UiTheme.Text(left,"КАТАЛОГ ДЕТАЛЕЙ",22,20,280,28,19);
-            UiTheme.Text(left,"50 МОДУЛЕЙ  /  ПЕРЕТАЩИТЕ НА ВЕРСТАК",22,55,290,20,11,UiTheme.Muted);
-            string[] names={"Корпус","Тяга","Рули","Питание","Груз"};
-            for(int i=0;i<5;i++)
+            var header=UiTheme.Panel("Navigation",root,24,20,1872,74,UiTheme.Ink);
+            UiTheme.Text(header,"БРП",24,10,88,52,34,UiTheme.TextColor);
+            UiTheme.Panel("BrandAccent",header,116,20,3,32,UiTheme.Orange);
+            UiTheme.Text(header,"ВЕКТОР ТЯГИ",138,15,350,30,19);
+            UiTheme.Text(header,"ЭКСПЕРИМЕНТАЛЬНАЯ ЛАБОРАТОРИЯ",138,43,400,20,10,UiTheme.Muted);
+            string[] links={"Программа","Чертежи","Журнал","Справка","Настройки"};
+            string[] commands={"missions","blueprints","records","help","settings"};
+            for(int i=0;i<links.Length;i++) UiTheme.Command(header,links[i],960+i*155,17,145,40,commands[i]);
+            UiTheme.Command(header,"Выход",1755,17,96,40,"home");
+            phase=UiTheme.Text(root,"АНГАР 01     /     СБОРКА",42,112,650,30,12,UiTheme.Cyan);
+            status=UiTheme.Text(root,"ГОТОВ К РАБОТЕ",1400,112,470,24,11,UiTheme.Muted);status.alignment=TextAlignmentOptions.Right;
+            left=UiTheme.Panel("PartsLibrary",root,24,156,324,764);
+            UiTheme.Text(left,"КОМПОНЕНТЫ",20,18,280,32,20);
+            UiTheme.Text(left,"50 типов / выбор и перенос",20,55,280,24,12,UiTheme.Muted);
+            string[] tabs={"Корпус","Тяга","Рули","Ток","Груз"};
+            for(int i=0;i<5;i++) UiTheme.Command(left,tabs[i],14+i*59,96,56,36,"category",i);
+            UiTheme.Divider(left,18,146,288);
+            catalogContent=UiTheme.Scroll(left,"Parts",12,163,300,579,out var scroll);
+            right=UiTheme.Panel("CraftInspector",root,1572,156,324,764);
+            UiTheme.Text(right,"ИНЖЕНЕРНЫЙ РАСЧЁТ",22,20,280,29,18);
+            craftValues=new TextMeshProUGUI[4];
+            string[] labels={"МАССА / Т","ТЯГА / КН","ТЯГА К ВЕСУ","ЗАПАС ΔV / М/С"};
+            for(int i=0;i<4;i++)
             {
-                int index=i;
-                UiTheme.Button(left,names[i],14+i*61,88,58,32,()=>PopulateCatalog((PartCategory)index));
+                float x=22+(i%2)*148,y=82+(i/2)*104;
+                UiTheme.Text(right,labels[i],x,y,138,22,10,UiTheme.Muted);
+                craftValues[i]=UiTheme.Text(right,"0",x,y+26,138,52,34);
             }
-            UiTheme.Divider(left,16,132,298);
-            catalogContent=UiTheme.Scroll(left,"Parts",14,145,304,600,out var scroll);
-            right=UiTheme.Panel("Inspector",root,1562,144,330,762);
-            UiTheme.Text(right,"ПАСПОРТ КОНСТРУКЦИИ",22,20,290,28,18);
-            stats=UiTheme.Text(right,"",22,65,286,215,17);
-            UiTheme.Divider(right,22,285,286);
-            detailTitle=UiTheme.Text(right,"Выберите деталь",22,307,286,62,22);
-            detailText=UiTheme.Text(right,"Описание и параметры появятся здесь.",22,380,286,142,15,UiTheme.Muted);
-            UiTheme.Button(right,"Снять",20,545,138,40,()=>game.DetachSelected());
-            UiTheme.Button(right,"Удалить",170,545,138,40,()=>game.DeleteSelected());
-            UiTheme.Button(right,"Симметрия ×4",20,597,288,40,()=>game.SymmetrySelected());
-            UiTheme.Text(right,"СТУПЕНЬ",20,653,120,23,12,UiTheme.Muted);
-            for(int i=0;i<6;i++) {int s=i;UiTheme.Button(right,(i+1).ToString(),20+i*49,683,43,36,()=>game.SetSelectedStage(s));}
-            bottom=UiTheme.Panel("BuildTools",root,390,934,1140,94,UiTheme.Ink);
-            UiTheme.Button(bottom,"Отмена",16,21,100,48,()=>game.Assembly.Undo());
-            UiTheme.Button(bottom,"Повтор",124,21,100,48,()=>game.Assembly.Redo());
-            UiTheme.Button(bottom,"Очистить",232,21,108,48,()=>game.ClearCraft());
-            UiTheme.Button(bottom,"Эталон",348,21,100,48,ShowPresets);
-            UiTheme.Button(bottom,"Сохранить",456,21,118,48,()=>game.SaveBlueprint());
-            UiTheme.Button(bottom,"Покраска",582,21,110,48,ShowPaint);
-            UiTheme.Button(bottom,"На стенд",700,21,130,48,()=>game.StartFlight(true));
-            UiTheme.Button(bottom,"ЗАПУСК",842,16,282,58,()=>game.StartFlight(false),true);
-            missionTitle=UiTheme.Text(root,"СВОБОДНЫЙ КОНСТРУКТОР",390,160,1125,42,28);
-            missionGoal=UiTheme.Text(root,"Соберите свою ракету. Или начните с готового чертежа.",391,210,1100,64,16,UiTheme.Muted);
-            toast=UiTheme.Text(root,"",400,875,1120,40,18,UiTheme.Cyan);toast.alignment=TextAlignmentOptions.Center;
-            UiTheme.Text(root,"BRP / 1961–2026",30,1042,350,24,12,UiTheme.Muted);
-            UiTheme.Text(root,"ЛКМ: выбрать / переносить     ПКМ: обзор     R: повернуть     Delete: удалить     Ctrl+Z: отмена",450,1042,1400,24,12,UiTheme.Muted);
-            PopulateCatalog(PartCategory.Structure);
-            CreateFlightControls();SetFlight(false);ShowHome();
+            stats=UiTheme.Text(right,"0 деталей",22,303,280,25,13,UiTheme.Cyan);
+            UiTheme.Divider(right,22,343,280);
+            detailTitle=UiTheme.Text(right,"Выберите компонент",22,370,280,75,23);
+            detailText=UiTheme.Text(right,"Паспорт детали, масса и назначение появятся здесь.",22,463,280,129,15,UiTheme.Muted);
+            UiTheme.Command(right,"Разблокировать",20,610,190,42,"detach");
+            UiTheme.Command(right,"Удалить",220,610,86,42,"delete");
+            UiTheme.Command(right,"Симметрия ×4",20,665,286,38,"symmetry");
+            UiTheme.Text(right,"СТУПЕНЬ",20,718,75,20,10,UiTheme.Muted);
+            for(int i=0;i<6;i++) UiTheme.Command(right,(i+1).ToString(),101+i*34,711,29,31,"stage",i);
+            bottom=UiTheme.Panel("AssemblyTools",root,373,947,1174,76,UiTheme.Ink);
+            UiTheme.Command(bottom,"Отмена",14,15,90,45,"undo");
+            UiTheme.Command(bottom,"Повтор",111,15,90,45,"redo");
+            UiTheme.Command(bottom,"Чертёж",208,15,109,45,"presets");
+            UiTheme.Command(bottom,"Очистить",324,15,108,45,"clear");
+            UiTheme.Command(bottom,"Сохранить",439,15,128,45,"save");
+            UiTheme.Command(bottom,"Цвет",574,15,92,45,"paint");
+            UiTheme.Command(bottom,"Испытать",673,15,151,45,"stand");
+            UiTheme.Command(bottom,"НА КОСМОДРОМ  →",838,11,321,53,"launch",0,true);
+            missionTitle=UiTheme.Text(root,"СВОБОДНЫЙ КОНСТРУКТОР",380,161,430,82,22);
+            missionGoal=UiTheme.Text(root,"Соберите и испытайте свою конструкцию.",381,254,340,120,14,UiTheme.Muted);
+            toast=UiTheme.Text(root,"",430,884,1060,44,17,UiTheme.Cyan);toast.alignment=TextAlignmentOptions.Center;
+            UiTheme.Text(root,"BRP    /    65 ЛЕТ ПЕРВОМУ ПОЛЁТУ",28,1045,540,23,10,UiTheme.Muted);
+            UiTheme.Text(root,"ЛКМ  Выбор     ПКМ  Обзор     R  Поворот     Ctrl+Z  Отмена",1070,1045,820,23,11,UiTheme.Muted).alignment=TextAlignmentOptions.Right;
+            CreateFlightControls();BuildHome();SetFlight(false);
+        }
+
+        void BuildHome()
+        {
+            homePanel=UiTheme.Panel("MainMenu",root,44,154,650,750,new Color(.025f,.035f,.04f,.94f));
+            UiTheme.Text(homePanel,"ПРОГРАММА BRP     /     1961–2026",36,34,570,28,12,UiTheme.Cyan);
+            UiTheme.Text(homePanel,"ВЕКТОР\nТЯГИ",30,108,590,210,82);
+            UiTheme.Text(homePanel,"ЛАБОРАТОРИЯ BRP",36,334,570,40,23,UiTheme.Muted);
+            UiTheme.Divider(homePanel,36,402,570);
+            UiTheme.Text(homePanel,"Ракета начинается с расчёта.\nСоберите свою и проверьте её в полёте.",36,430,570,70,19);
+            UiTheme.Command(homePanel,"Продолжить программу  →",36,535,570,58,"campaign",0,true);
+            UiTheme.Command(homePanel,"Свободный режим",36,608,276,44,"sandbox");
+            UiTheme.Command(homePanel,"Сборка на время",330,608,276,44,"trial");
+            UiTheme.Command(homePanel,"Подключить VR",36,672,570,40,"vr");
         }
 
         void CreateFlightControls()
         {
-            flightPanel=UiTheme.Panel("FlightPanel",root,28,144,330,762);
-            UiTheme.Text(flightPanel,"ТЕЛЕМЕТРИЯ ПОЛЁТА",22,20,290,30,19);
-            flightData=UiTheme.Text(flightPanel,"",22,72,286,460,18);
-            UiTheme.Button(flightPanel,"Ступень / Space",20,550,290,42,()=>game.NextStage());
-            UiTheme.Button(flightPanel,"Отделить груз",20,603,290,42,()=>game.ReleasePayload());
-            UiTheme.Button(flightPanel,"Парашют / P",20,656,290,42,()=>game.DeployParachute());
-            UiTheme.Button(flightPanel,"В ангар",20,709,290,36,()=>game.ReturnToWorkshop());
+            flightPanel=UiTheme.Panel("FlightReadout",root,24,156,324,495);
+            UiTheme.Text(flightPanel,"ПОЛЁТНЫЕ ДАННЫЕ",22,20,280,28,18);
+            flightValues=new TextMeshProUGUI[4];
+            string[] labels={"ВЫСОТА / КМ","СКОРОСТЬ / М/С","АПОГЕЙ / КМ","ПЕРИГЕЙ / КМ"};
+            for(int i=0;i<4;i++)
+            {
+                float y=78+i*95;
+                UiTheme.Text(flightPanel,labels[i],22,y,280,23,11,UiTheme.Muted);
+                flightValues[i]=UiTheme.Text(flightPanel,"0.0",22,y+27,280,54,38,i<2?UiTheme.TextColor:UiTheme.Cyan);
+            }
+            flightData=UiTheme.Text(flightPanel,"",22,458,280,26,12,UiTheme.Muted);
+            flightActions=UiTheme.Panel("FlightCommands",root,373,947,1174,76,UiTheme.Ink);
+            UiTheme.Command(flightActions,"СТУПЕНЬ  /  Space",14,12,240,52,"next_stage",0,true);
+            UiTheme.Command(flightActions,"Отделить груз",266,15,172,45,"payload");
+            UiTheme.Command(flightActions,"Парашют",450,15,144,45,"parachute");
+            UiTheme.Command(flightActions,"Карта",606,15,125,45,"map");
+            UiTheme.Command(flightActions,"Управление",743,15,202,45,"flight_controls");
+            UiTheme.Command(flightActions,"В ангар",957,15,201,45,"workshop");
         }
 
         public void SetFlight(bool active)
         {
             left.gameObject.SetActive(!active);right.gameObject.SetActive(!active);bottom.gameObject.SetActive(!active);
-            flightPanel.gameObject.SetActive(active);
-            phase.text=active?"02 / ИСПЫТАНИЯ И ПОЛЁТ":"01 / СБОРОЧНЫЙ АНГАР";
+            flightPanel.gameObject.SetActive(active);flightActions.gameObject.SetActive(active);
+            missionTitle.gameObject.SetActive(!active);missionGoal.gameObject.SetActive(!active);
+            phase.text=active?"КОСМОДРОМ     /     ПОЛЁТНЫЕ ИСПЫТАНИЯ":"АНГАР 01     /     ИНЖЕНЕРНАЯ СБОРКА";
         }
 
         public void ShowFlightToolbar()
@@ -112,17 +150,22 @@ namespace BRP
         public void PopulateCatalog(PartCategory next)
         {
             category=next;
-            foreach(Transform child in catalogContent) Destroy(child.gameObject);
+            for(int i=catalogContent.childCount-1;i>=0;i--)
+            {
+                var child=catalogContent.GetChild(i);
+                if(Application.isPlaying) Destroy(child.gameObject);else DestroyImmediate(child.gameObject);
+            }
             var parts=game.Catalog.parts.Where(p=>p.category==category).ToArray();
             for(int i=0;i<parts.Length;i++)
             {
-                var d=parts[i];var card=UiTheme.Panel(d.id,catalogContent,0,i*86,290,77,new Color(.065f,.104f,.133f));
-                UiTheme.Text(card,Array.IndexOf(game.Catalog.parts,d).ToString("D2"),12,13,30,24,13,UiTheme.Cyan);
-                UiTheme.Text(card,d.title,50,10,225,40,16);
-                UiTheme.Text(card,$"{d.dryMass:N0} КГ    /    {(d.surface?"БОКОВОЙ УЗЕЛ":"ОСЕВОЙ УЗЕЛ")}",50,53,225,20,10,UiTheme.Muted);
+                var d=parts[i];var card=UiTheme.Panel(d.id,catalogContent,0,i*100,286,92,new Color(.067f,.081f,.087f));
+                if(d.thumbnail!=null) {var icon=UiTheme.Panel("Preview",card,6,10,67,67,new Color(.11f,.13f,.14f));var image=icon.GetComponent<UnityEngine.UI.Image>();image.sprite=d.thumbnail;image.preserveAspect=true;image.raycastTarget=false;}
+                UiTheme.Text(card,(Array.IndexOf(game.Catalog.parts,d)+1).ToString("D2"),82,64,28,18,10,UiTheme.Cyan);
+                UiTheme.Text(card,d.title,82,13,190,43,16);
+                UiTheme.Text(card,$"{d.dryMass:N0} КГ    /    {(d.surface?"БОКОВОЙ УЗЕЛ":"ОСЕВОЙ УЗЕЛ")}",118,64,155,20,9,UiTheme.Muted);
                 card.gameObject.AddComponent<CatalogCard>().definition=d;
             }
-            catalogContent.sizeDelta=new Vector2(294,parts.Length*86);
+            catalogContent.sizeDelta=new Vector2(286,parts.Length*100);
             catalogContent.anchoredPosition=Vector2.zero;
         }
 
@@ -134,16 +177,25 @@ namespace BRP
         public void UpdateStats()
         {
             var craft=game.Assembly.Blueprint;
-            if(craft.parts.Count==0) {stats.text="ДЕТАЛИ                  0 / 128\n\nМАССА                         0 КГ\nТЯГА                           0 КН\n\nУстановите первый корпус.";return;}
+            if(craft.parts.Count==0)
+            {
+                stats.text="0 деталей / 0 типов";foreach(var value in craftValues) value.text="0";
+                return;
+            }
             var body=new FlightBody(craft,game.Catalog);
-            stats.text=$"ДЕТАЛИ                {craft.parts.Count} / 128\nТИПЫ                       {craft.parts.Select(p=>p.partId).Distinct().Count()} / 50\n\nМАССА                   {body.mass/1000:F1} Т\nТЯГА                      {body.AvailableThrust/1000:F0} КН\nТЯГА / ВЕС             {body.TWR:F2}\nЗАПАС ΔV              {body.DeltaV:F0} М/С";
-            status.text=body.TWR>1?"КОНСТРУКЦИЯ ГОТОВА К ПРОВЕРКЕ":"ПРОВЕРЬТЕ ТЯГУ И МАССУ";
+            craftValues[0].text=(body.mass/1000).ToString("F1");craftValues[1].text=(body.AvailableThrust/1000).ToString("F0");
+            craftValues[2].text=body.TWR.ToString("F2");craftValues[3].text=body.DeltaV.ToString("F0");
+            craftValues[2].color=body.TWR>1?UiTheme.Cyan:UiTheme.Orange;
+            stats.text=$"{craft.parts.Count} деталей / {craft.parts.Select(p=>p.partId).Distinct().Count()} типов";
+            status.text=body.TWR>1?"СИСТЕМЫ ГОТОВЫ К ИСПЫТАНИЮ":"ПРОВЕРЬТЕ ТЯГУ И МАССУ";
         }
         public void UpdateFlight(FlightBody body,double distance,double relativeSpeed)
         {
             var orbit=body.Orbit;
-            string Format(double v)=>double.IsInfinity(v)?"∞":(v/1000).ToString("F1");
-            flightData.text=$"T + {body.elapsed:0000.0} С\n\nВЫСОТА          {body.Altitude/1000:F2} КМ\nСКОРОСТЬ       {body.SurfaceVelocity.Magnitude:F0} М/С\nПО ВЕРТИКАЛИ {body.VerticalSpeed:F0} М/С\n\nМАССА             {body.mass/1000:F2} Т\nТОПЛИВО         {body.Fuel/1000:F2} Т\nТЯГА                 {body.lastThrust/1000:F0} КН\nДРОССЕЛЬ        {body.throttle*100:F0}%\nСТУПЕНЬ          {body.stage+1} / 6\n\nАПОГЕЙ            {Format(orbit.apoapsis)} КМ\nПЕРИГЕЙ          {Format(orbit.periapsis)} КМ\nНАГРЕВ             {body.Temperature:F0} К\nЭНЕРГИЯ          {body.Energy:F0} ДЖ\n\nЦЕЛЬ                 {distance:F1} М\nОТН. СКОРОСТЬ {relativeSpeed:F2} М/С";
+            string Format(double value)=>double.IsInfinity(value)?"∞":(value/1000).ToString("F1");
+            flightValues[0].text=(body.Altitude/1000).ToString("F2");flightValues[1].text=body.SurfaceVelocity.Magnitude.ToString("F0");
+            flightValues[2].text=Format(orbit.apoapsis);flightValues[3].text=Format(orbit.periapsis);
+            flightData.text=$"T+{body.elapsed:0000}с   Тяга {body.throttle*100:F0}%   {body.Temperature:F0}К";
             status.text=$"{body.lastEvent.ToUpperInvariant()}   /   ×{game.TimeWarp}";
         }
 
@@ -157,18 +209,18 @@ namespace BRP
             UiTheme.Button(panel,"×",width-62,20,40,40,CloseDialog);
             UiTheme.Divider(panel,30,76,width-60);return panel;
         }
-        public void CloseDialog() {if(modal!=null) {Destroy(modal.gameObject);modal=null;}}
+        public void CloseDialog()
+        {
+            if(modal!=null) {Destroy(modal.gameObject);modal=null;}
+            if(homePanel!=null) homePanel.gameObject.SetActive(false);
+            if(left!=null) SetFlight(game.IsFlying);
+        }
         public void ShowHome()
         {
-            var panel=Dialog("ВЕКТОР ТЯГИ",820,690);
-            UiTheme.Text(panel,"ЛАБОРАТОРИЯ BRP",35,98,750,35,18,UiTheme.Cyan);
-            UiTheme.Text(panel,"Соберите ракету.\nПроверьте расчёт полётом.",35,152,730,110,38);
-            UiTheme.Text(panel,"50 типов деталей · 20 миссий · орбитальная программа",35,286,740,35,17,UiTheme.Muted);
-            UiTheme.Button(panel,"Начать кампанию",35,356,750,60,()=>{game.StartMission(Math.Min(20,game.Progress.completed.Count+1));CloseDialog();},true);
-            UiTheme.Button(panel,"Свободный конструктор",35,431,365,52,()=>{game.StartSandbox();CloseDialog();});
-            UiTheme.Button(panel,"Сборка на время",420,431,365,52,()=>{game.StartTimeTrial();CloseDialog();});
-            UiTheme.Button(panel,"Виртуальная реальность",35,499,750,48,()=>{CloseDialog();game.EnableVR();});
-            UiTheme.Text(panel,"Управление мышью и клавиатурой доступно сразу.\nИстория космонавтики начинается с работы инженера.",35,582,750,60,17,UiTheme.Muted);
+            CloseDialog();homePanel.gameObject.SetActive(true);
+            left.gameObject.SetActive(false);right.gameObject.SetActive(false);bottom.gameObject.SetActive(false);
+            missionTitle.gameObject.SetActive(false);missionGoal.gameObject.SetActive(false);
+            flightPanel.gameObject.SetActive(false);flightActions.gameObject.SetActive(false);
         }
         public void ShowMissions()
         {

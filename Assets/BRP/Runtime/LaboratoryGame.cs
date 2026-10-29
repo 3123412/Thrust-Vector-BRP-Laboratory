@@ -13,16 +13,17 @@ namespace BRP
     public sealed class LaboratoryGame : MonoBehaviour
     {
         public static LaboratoryGame Instance { get; private set; }
-        public PartCatalog Catalog { get; private set; }
-        public LabSceneAssets Assets { get; private set; }
-        public AssemblyController Assembly { get; private set; }
-        public LaboratoryUI UI { get; private set; }
-        public SoundEngine Sound { get; private set; }
+        [field: SerializeField] public PartCatalog Catalog { get; private set; }
+        [field: SerializeField] public LabSceneAssets Assets { get; private set; }
+        [field: SerializeField] public AssemblyController Assembly { get; private set; }
+        [field: SerializeField] public LaboratoryUI UI { get; private set; }
+        [field: SerializeField] public SoundEngine Sound { get; private set; }
         public PlayerProgress Progress { get; private set; }
         public MissionDefinition[] Missions { get; private set; }
         public PartView Selected { get; private set; }
         public FlightBody Flight { get; private set; }
         public FlightBody Target { get; private set; }
+        public FlightBody Payload { get; private set; }
         public int TimeWarp { get; private set; }=1;
         public MissionDefinition CurrentMission { get; private set; }
         public bool IsFlying=>Flight!=null;
@@ -30,7 +31,7 @@ namespace BRP
         public bool TimeTrial { get; private set; }
         public Camera mainCamera;
         public Transform workshop;
-        Transform benchRoot;
+        [SerializeField] Transform benchRoot;
         FlightPresentation presentation;
         GameObject flightScene,xrRig;
         LineRenderer snapMarker,comLine;
@@ -39,8 +40,8 @@ namespace BRP
         Vector3 dragStart;
         Dictionary<PartView,Vector3> dragOffsets=new Dictionary<PartView,Vector3>();
         Plane dragPlane;
-        Vector3 cameraTarget=new Vector3(0,2.0f,0);
-        float yaw=0,pitch=10,distance=5.8f,toastUntil,timer,uiTimer,flightAccumulator;
+        Vector3 cameraTarget=new Vector3(.1f,2.25f,0);
+        float yaw=-18,pitch=8,distance=6.7f,toastUntil,timer,uiTimer,flightAccumulator;
         double orbitPowerTime;
         bool missionDone,resultShown,orbitReached,vrEnabled;
         readonly List<FlightBody> debris=new List<FlightBody>();
@@ -49,25 +50,20 @@ namespace BRP
         void Awake()
         {
             Instance=this;Application.runInBackground=true;Application.targetFrameRate=90;
-            Catalog=Resources.Load<PartCatalog>("BRP/Catalog");Assets=Resources.Load<LabSceneAssets>("BRP/SceneAssets");
-            if(Catalog==null||Assets==null) throw new InvalidOperationException("BRP content has not been built");
+            if(Catalog==null||Assets==null||workshop==null||Assembly==null||UI==null) throw new InvalidOperationException("Open the authored Laboratory scene");
             Progress=SaveStore.Load();Missions=MissionDefinition.All;AudioListener.volume=Progress.volume;
-            Sound=gameObject.AddComponent<SoundEngine>();
-            var eventSystem=new GameObject("EventSystem",typeof(EventSystem),typeof(InputSystemUIInputModule));
-            eventSystem.GetComponent<InputSystemUIInputModule>().AssignDefaultActions();
-            workshop=new GameObject("Workshop").transform;
-            Instantiate(Assets.hangar,workshop);
-            var bench=Instantiate(Assets.workbench,workshop);bench.transform.position=new Vector3(0,0,0);
-            var floor=workshop.gameObject.AddComponent<BoxCollider>();floor.center=new Vector3(0,-.12f,0);floor.size=new Vector3(18,.25f,20);
-            var tableCollider=bench.AddComponent<BoxCollider>();tableCollider.center=new Vector3(0,1,0);tableCollider.size=new Vector3(3.8f,.14f,1.8f);
-            benchRoot=new GameObject("AssemblyRoot").transform;benchRoot.SetParent(workshop,false);
-            benchRoot.position=new Vector3(0,1.5f,0);benchRoot.localScale=Vector3.one*AssemblyController.Scale;
-            Assembly=gameObject.AddComponent<AssemblyController>();Assembly.Initialize(Catalog,benchRoot);
+            Assembly.Initialize(Catalog,benchRoot);
             Assembly.Changed+=OnAssemblyChanged;
-            var uiObject=new GameObject("LaboratoryUI",typeof(RectTransform));UI=uiObject.AddComponent<LaboratoryUI>();UI.Initialize(this,Assets.font);
+            UI.Initialize(this,Assets.font);
             snapMarker=CreateLine("SnapMarker",UiTheme.Cyan,.008f);
             comLine=CreateLine("CenterOfMass",UiTheme.Orange,.008f);
             SetCamera();UI.UpdateStats();
+        }
+
+        public void ConfigureScene(PartCatalog catalog,LabSceneAssets assets,Transform environment,Transform assemblyTransform,AssemblyController assembly,LaboratoryUI ui,SoundEngine sound)
+        {
+            Catalog=catalog;Assets=assets;workshop=environment;benchRoot=assemblyTransform;Assembly=assembly;UI=ui;Sound=sound;
+            Progress=new PlayerProgress();Missions=MissionDefinition.All;
         }
 
         LineRenderer CreateLine(string name,Color color,float width)
@@ -175,8 +171,8 @@ namespace BRP
             if(errors.Count>0) {Toast(string.Join(" · ",errors.Take(2)));Sound.Play(SoundCue.Error);return;}
             EndDrag();Selected=null;OnStand=stand;Flight=new FlightBody(Assembly.Blueprint.Clone(),Catalog);
             Flight.windSpeed=CurrentMission?.wind??0;Flight.launched=true;
-            debris.Clear();Target=null;TimeWarp=1;orbitPowerTime=0;orbitReached=false;resultShown=false;flightAccumulator=0;samples.Clear();
-            Flight.PartFailed+=p=>Sound.Play(SoundCue.Error);
+            debris.Clear();Target=null;Payload=null;TimeWarp=1;orbitPowerTime=0;orbitReached=false;resultShown=false;flightAccumulator=0;samples.Clear();
+            Flight.PartFailed+=p=> {Sound.Play(SoundCue.Explosion);if(presentation!=null) presentation.Burst(p.placement.position);};
             workshop.gameObject.SetActive(false);comLine.gameObject.SetActive(false);snapMarker.positionCount=0;
             flightScene=new GameObject("FlightScene");presentation=flightScene.AddComponent<FlightPresentation>();
             presentation.Initialize(Flight,Assets,mainCamera);
@@ -186,9 +182,11 @@ namespace BRP
         public void ReturnToWorkshop()
         {
             if(Flight!=null) ExportTelemetry();
-            Flight=null;Target=null;debris.Clear();OnStand=false;TimeWarp=1;
+            Flight=null;Target=null;Payload=null;debris.Clear();OnStand=false;TimeWarp=1;
             if(flightScene!=null) Destroy(flightScene);
             if(workshop!=null) workshop.gameObject.SetActive(true);
+            if(mainCamera!=null) mainCamera.farClipPlane=4000;
+            if(Assets!=null) {RenderSettings.skybox=Assets.skyMaterial;RenderSettings.fog=true;}
             if(comLine!=null) comLine.gameObject.SetActive(true);
             if(UI!=null) UI.SetFlight(false);
             if(Sound!=null) Sound.SetEngine(0);SetCamera();
@@ -202,7 +200,7 @@ namespace BRP
         public void ReleasePayload()
         {
             if(Flight==null) return;
-            var detached=Flight.Separate(true);if(detached!=null) {debris.Add(detached);Flight.payloadReleased=true;}
+            var detached=Flight.Separate(true);if(detached!=null) {debris.Add(detached);Payload=detached;Flight.payloadReleased=true;}
             Sound.Play(SoundCue.Separate);Toast(Flight.lastEvent);
         }
         public void DeployParachute() {if(Flight!=null) {Flight.DeployParachutes();Toast(Flight.lastEvent);}}
@@ -210,6 +208,7 @@ namespace BRP
         public void ToggleMap() {if(presentation!=null) presentation.map=!presentation.map;}
         public void StartOrbitalPractice()
         {
+            if(CurrentMission!=null&&CurrentMission.id!=18&&CurrentMission.id!=19) {Toast("Орбитальный стенд доступен в свободном режиме и миссиях сближения");return;}
             if(Flight==null) {LoadPreset(2);StartFlight(false);}
             if(Flight==null) return;
             double radius=OrbitalMechanics.Radius+180000;
@@ -398,7 +397,7 @@ namespace BRP
                 if(id==14) pass=f.aborted&&f.chuteDeployed;
                 if(id==15) pass=f.landed&&f.Has(PartKind.Capsule)&&f.Has(PartKind.FlightRecorder);
                 if(id==16) pass=orbitReached;
-                if(id==17) pass=orbitReached&&f.payloadReleased&&f.telemetryTime>=180&&f.Has(PartKind.Satellite);
+                if(id==17) pass=orbitReached&&Payload!=null&&Payload.telemetryTime>=180&&Payload.Has(PartKind.Satellite);
                 if(id==18&&Target!=null) pass=(f.position-Target.position).Magnitude<50&&(f.velocity-Target.velocity).Magnitude<1;
                 if(id==19) pass=f.docked;
                 if(id==20) pass=orbitReached&&f.payloadReleased&&f.landed&&f.Has(PartKind.Capsule)&&f.Has(PartKind.FlightRecorder);

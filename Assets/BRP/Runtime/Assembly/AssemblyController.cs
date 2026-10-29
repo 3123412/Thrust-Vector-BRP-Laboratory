@@ -18,15 +18,25 @@ namespace BRP
     public sealed class AssemblyController : MonoBehaviour
     {
         public const float Scale = .34f;
-        public CraftBlueprint Blueprint { get; private set; } = new CraftBlueprint();
-        public PartCatalog Catalog { get; private set; }
-        public readonly List<PartView> views = new List<PartView>();
+        [field: SerializeField] public CraftBlueprint Blueprint { get; private set; } = new CraftBlueprint();
+        [field: SerializeField] public PartCatalog Catalog { get; private set; }
+        public List<PartView> views = new List<PartView>();
         public Transform assemblyRoot;
         public event Action Changed;
         public int snapCount, detachCount, paintCount;
         readonly List<CraftBlueprint> undo = new List<CraftBlueprint>();
         readonly List<CraftBlueprint> redo = new List<CraftBlueprint>();
-        public void Initialize(PartCatalog catalog,Transform root) { Catalog=catalog;assemblyRoot=root; }
+        readonly HashSet<string> detachedIds = new HashSet<string>();
+        public void Initialize(PartCatalog catalog,Transform root)
+        {
+            Catalog=catalog;assemblyRoot=root;
+            foreach(var view in views)
+            {
+                if(view==null) continue;
+                var placement=Blueprint.parts.Find(p=>p.instanceId==view.Placement.instanceId);
+                if(placement!=null) view.Initialize(this,catalog.Find(placement.partId),placement);
+            }
+        }
 
         public void Remember()
         {
@@ -38,7 +48,10 @@ namespace BRP
         public void Load(CraftBlueprint craft,bool remember=true)
         {
             if(remember) Remember();
-            foreach(var view in views.ToArray()) if(view!=null) Destroy(view.gameObject);
+            foreach(var view in views.ToArray()) if(view!=null)
+            {
+                if(Application.isPlaying) Destroy(view.gameObject);else DestroyImmediate(view.gameObject);
+            }
             views.Clear();Blueprint=craft.Clone();
             foreach(var placement in Blueprint.parts)
             {
@@ -56,6 +69,7 @@ namespace BRP
             go.transform.SetParent(assemblyRoot,false);
             var model=Instantiate(definition.model,go.transform);
             model.name="Model";
+            if(definition.surface) model.transform.localRotation=Quaternion.Euler(0,180,0);
             var view=go.AddComponent<PartView>();
             view.Initialize(this,definition,placement);
             views.Add(view);
@@ -76,6 +90,7 @@ namespace BRP
             if(!view.Attached) return new List<PartView>{view};
             Remember();detachCount++;
             var group=Blueprint.Subtree(view.Placement.instanceId);
+            foreach(var part in group) detachedIds.Add(part.instanceId);
             foreach(var p in group) Blueprint.parts.Remove(p);
             var result=views.Where(v=>group.Any(p=>p.instanceId==v.Placement.instanceId)).ToList();
             foreach(var v in result) v.Attached=false;
@@ -118,7 +133,7 @@ namespace BRP
                 }
                 else
                 {
-                    int port=d.mount==MountType.Engine?1:0;
+                    int port=d.mount==MountType.Engine&&parent.kind!=PartKind.StackDecoupler&&parent.kind!=PartKind.Adapter?1:0;
                     if(Blueprint.parts.Any(p=>p.parentId==existing.instanceId&&p.port==port)) continue;
                     var position=existing.position+Vector3.up*(port==0?parent.height:-d.height);
                     Consider(new SnapTarget(existing.instanceId,port,position,Quaternion.identity));
@@ -131,7 +146,7 @@ namespace BRP
 
         public void Attach(PartView view,SnapTarget target,IReadOnlyList<PartView> group=null)
         {
-            Remember();
+            if(group==null||!group.Any(p=>detachedIds.Contains(p.Placement.instanceId))) Remember();
             var oldPosition=view.Placement.position;
             var oldRotation=view.Placement.rotation;
             var delta=target.rotation*Quaternion.Inverse(oldRotation);
@@ -150,7 +165,8 @@ namespace BRP
                     }
                 }
                 if(!Blueprint.parts.Contains(item.Placement)) Blueprint.parts.Add(item.Placement);
-                item.Attached=true;item.SetPlacement();
+                detachedIds.Remove(item.Placement.instanceId);
+                item.Attached=true;item.SnapToPlacement();
             }
             snapCount++;Changed?.Invoke();
         }
@@ -187,7 +203,9 @@ namespace BRP
                 int port=2+(source.port-2+i*2)%8;
                 if(Blueprint.parts.Any(p=>p.parentId==source.parentId&&p.port==port)) continue;
                 var q=Quaternion.Euler(0,i*90,0);
-                var p=new PlacedPart {partId=source.partId,parentId=source.parentId,port=port,stage=source.stage,color=source.color,position=q*source.position,rotation=q*source.rotation};
+                var parent=Blueprint.parts.Find(p=>p.instanceId==source.parentId);
+                var center=parent?.position??Vector3.zero;
+                var p=new PlacedPart {partId=source.partId,parentId=source.parentId,port=port,stage=source.stage,color=source.color,position=center+q*(source.position-center),rotation=q*source.rotation};
                 Blueprint.parts.Add(p);var clone=CreateView(view.Definition,p);clone.Attached=true;clone.SetPlacement();
             }
             Changed?.Invoke();

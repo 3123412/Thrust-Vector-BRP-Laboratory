@@ -114,35 +114,8 @@ namespace BRP.Editor
             foreach(var texture in font.atlasTextures) if(texture!=null) AssetDatabase.AddObjectToAsset(texture,font);
             EditorUtility.SetDirty(font);return font;
         }
-        public static void BuildScene()
-        {
-            var scene=EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);
-            var camera=new GameObject("Main Camera",typeof(Camera),typeof(AudioListener));camera.tag="MainCamera";
-            var cam=camera.GetComponent<Camera>();cam.fieldOfView=42;cam.nearClipPlane=.04f;cam.farClipPlane=2000;
-            cam.backgroundColor=new Color(.015f,.027f,.045f);cam.clearFlags=CameraClearFlags.SolidColor;
-            var data=camera.AddComponent<UniversalAdditionalCameraData>();data.renderPostProcessing=true;
-            var sun=new GameObject("Key Light",typeof(Light));var light=sun.GetComponent<Light>();light.type=LightType.Directional;
-            light.intensity=2.2f;light.color=new Color(.86f,.92f,1);light.shadows=LightShadows.Soft;
-            sun.transform.rotation=Quaternion.Euler(42,-35,0);
-            Point("BenchFill",new Vector3(-3,4,-3),new Color(.4f,.7f,1),18,10);
-            Point("WarmRim",new Vector3(3,4,2),new Color(1,.5f,.25f),25,12);
-            Point("HangarFill",new Vector3(0,5,4),new Color(.45f,.65f,1),30,18);
-            RenderSettings.ambientMode=AmbientMode.Flat;RenderSettings.ambientLight=new Color(.19f,.25f,.31f);
-            RenderSettings.fog=true;RenderSettings.fogColor=cam.backgroundColor;RenderSettings.fogMode=FogMode.Exponential;RenderSettings.fogDensity=.009f;
-            var volume=new GameObject("Global Volume",typeof(Volume)).GetComponent<Volume>();volume.isGlobal=true;
-            var profile=ScriptableObject.CreateInstance<VolumeProfile>();
-            profile.Add<Tonemapping>().mode.Override(TonemappingMode.ACES);
-            var bloom=profile.Add<Bloom>();bloom.intensity.Override(.2f);bloom.threshold.Override(1.2f);
-            AssetDatabase.CreateAsset(profile,"Assets/BRP/Art/Materials/LabVolume.asset");volume.sharedProfile=profile;
-            var game=new GameObject("Laboratory",typeof(LaboratoryGame)).GetComponent<LaboratoryGame>();game.mainCamera=cam;
-            EditorSceneManager.SaveScene(scene,"Assets/BRP/Scenes/Laboratory.unity");
-            EditorBuildSettings.scenes=new[]{new EditorBuildSettingsScene("Assets/BRP/Scenes/Laboratory.unity",true)};
-            AssetDatabase.SaveAssets();
-        }
-        static void Point(string name,Vector3 position,Color color,float intensity,float range)
-        {
-            var light=new GameObject(name,typeof(Light)).GetComponent<Light>();light.type=LightType.Point;light.transform.position=position;light.color=color;light.intensity=intensity;light.range=range;
-        }
+        public static void BuildScene() => StudioSceneBuilder.Build();
+
         [MenuItem("BRP/Build Windows")]
         public static void BuildWindows()
         {
