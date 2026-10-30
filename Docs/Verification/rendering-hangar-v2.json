@@ -1,0 +1,12 @@
+{
+    "utc": "2026-10-30T05:43:57.6470168Z",
+    "context": "hangar-v2 / Editor Game View; not headset timing",
+    "frames": 704,
+    "width": 1920,
+    "height": 1080,
+    "renderers": 540,
+    "triangles": 505048,
+    "drawCalls": 1311,
+    "averageFrameMs": 11.376762357950941,
+    "p95FrameMs": 13.717000001634005
+}

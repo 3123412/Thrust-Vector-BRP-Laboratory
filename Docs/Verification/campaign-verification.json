@@ -1,0 +1,107 @@
+{
+    "utc": "2026-10-30T05:51:23.9282167Z",
+    "passed": 20,
+    "failed": 0,
+    "checks": [
+        {
+            "name": "mission 01 / Первый узел",
+            "passed": true,
+            "details": "Assembly accepted"
+        },
+        {
+            "name": "mission 02 / Инженерная сборка",
+            "passed": true,
+            "details": "Assembly accepted"
+        },
+        {
+            "name": "mission 03 / Центр тяжести",
+            "passed": true,
+            "details": "Assembly accepted"
+        },
+        {
+            "name": "mission 04 / Огневой стенд",
+            "passed": true,
+            "details": "Flight 10,04s; Огневые испытания"
+        },
+        {
+            "name": "mission 05 / Подача топлива",
+            "passed": true,
+            "details": "Flight 10,04s; Огневые испытания"
+        },
+        {
+            "name": "mission 06 / Первый запуск",
+            "passed": true,
+            "details": "Flight 28,82s; Двигатели работают"
+        },
+        {
+            "name": "mission 07 / Удержание курса",
+            "passed": true,
+            "details": "Flight 57,02s; Двигатели работают"
+        },
+        {
+            "name": "mission 08 / Боковой ветер",
+            "passed": true,
+            "details": "Flight 46,32s; Двигатели работают"
+        },
+        {
+            "name": "mission 09 / Разделение ступеней",
+            "passed": true,
+            "details": "Flight 222,36s; Формирование орбиты"
+        },
+        {
+            "name": "mission 10 / Полезная нагрузка",
+            "passed": true,
+            "details": "Flight 222,36s; Полезная нагрузка отделена"
+        },
+        {
+            "name": "mission 11 / Граница космоса",
+            "passed": true,
+            "details": "Flight 236,56s; Формирование орбиты"
+        },
+        {
+            "name": "mission 12 / Автономное питание",
+            "passed": true,
+            "details": "Flight 602,30s; Орбита достигнута"
+        },
+        {
+            "name": "mission 13 / Тепловой режим",
+            "passed": true,
+            "details": "Flight 217,82s; Подъём первой ступени"
+        },
+        {
+            "name": "mission 14 / Аварийное спасение",
+            "passed": true,
+            "details": "Flight 50,42s; Парашютная посадка"
+        },
+        {
+            "name": "mission 15 / Возвращение груза",
+            "passed": true,
+            "details": "Flight 95,56s; Посадка: 5,4 м/с"
+        },
+        {
+            "name": "mission 16 / Первая орбита",
+            "passed": true,
+            "details": "Flight 422,18s; Орбита достигнута"
+        },
+        {
+            "name": "mission 17 / Развёртывание спутника",
+            "passed": true,
+            "details": "Flight 602,18s; Полезная нагрузка отделена"
+        },
+        {
+            "name": "mission 18 / Сближение",
+            "passed": true,
+            "details": "Flight 46,62s; Орбитальный стенд / высота 180 км"
+        },
+        {
+            "name": "mission 19 / Стыковка",
+            "passed": true,
+            "details": "Flight 139,86s; Стыковка выполнена"
+        },
+        {
+            "name": "mission 20 / Полный инженерный цикл",
+            "passed": true,
+            "details": "Flight 3601,56s; Посадка: 5,3 м/с"
+        }
+    ]
+}

@@ -1,0 +1,332 @@
+{
+    "utc": "2026-10-30T05:41:42.5302776Z",
+    "passed": 65,
+    "failed": 0,
+    "checks": [
+        {
+            "name": "catalog has 50 unique functional definitions",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / booster_engine",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / first_stage",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / adapter",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / vacuum_engine",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / second_stage",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / fin",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / instrument_bay",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / fairing",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / window",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / antenna",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / fuel_tank",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / oxidizer_tank",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / service_tank",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / solid_booster",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / radial_decoupler",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / stack_decoupler",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / fuel_line",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / fuel_pump",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / fuel_valve",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / pressurizer",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / gimbal",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / vernier_engine",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / rcs",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / reaction_wheel",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / gyroscope",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / horizon_sensor",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / control_fin",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / airbrake",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / ballast",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / computer",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / battery",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / solar_panel",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / fuel_cell",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / power_bus",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / radiator",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / insulation",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / heat_shield",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / thermometer",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / altimeter",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / transmitter",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / capsule",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / satellite",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / docking_port",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / cargo_bay",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / payload_separator",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / parachute",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / drogue",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / landing_leg",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / escape_tower",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "model / recorder",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "Earth gravity at surface",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "atmospheric profile decreases",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "circular orbit ten revolutions",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "quaternion rotates and reverses",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "preset graph / 0",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "preset graph / 1",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "preset graph / 2",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "mass and resources are conserved",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "two-stage separation conserves linear momentum",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "docking conserves linear momentum",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "integration converges for powered ascent",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "blueprint JSON round trip",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "invalid graph is rejected",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "mission identifiers are complete",
+            "passed": true,
+            "details": ""
+        }
+    ]
+}

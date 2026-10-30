@@ -1,0 +1,42 @@
+{
+    "utc": "2026-10-30T05:52:16.1936057Z",
+    "passed": 7,
+    "failed": 0,
+    "checks": [
+        {
+            "name": "catalog parts snap to structural ports",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "detach and reattach preserve subtree",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "paint undo and redo restore state",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "four-way fin symmetry has distinct ports",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "full subtree detach and undo",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "serialized menu command opens and closes help",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "authored UI and VR references exist",
+            "passed": true,
+            "details": ""
+        }
+    ]
+}

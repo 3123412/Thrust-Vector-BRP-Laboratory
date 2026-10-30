@@ -1,0 +1,52 @@
+{
+    "utc": "2026-10-30T05:38:31.4643442Z",
+    "passed": 9,
+    "failed": 0,
+    "checks": [
+        {
+            "name": "orbital launcher reaches orbit",
+            "passed": true,
+            "details": "422,18s / 121686–231848m"
+        },
+        {
+            "name": "complete launch, satellite and capsule recovery",
+            "passed": true,
+            "details": "Посадка: 5,3 м/с; satellite telemetry 180,0s; flight 3601,6s"
+        },
+        {
+            "name": "emergency tower recovers a capsule",
+            "passed": true,
+            "details": "Посадка: 5,3 м/с"
+        },
+        {
+            "name": "RCS rendezvous and port docking",
+            "passed": true,
+            "details": "Docked at 139,84s"
+        },
+        {
+            "name": "closed valve stops liquid fuel",
+            "passed": true,
+            "details": "No thrust or liquid fuel consumption"
+        },
+        {
+            "name": "solid charge continues after throttle cutoff",
+            "passed": true,
+            "details": "Solid remains lit at zero throttle"
+        },
+        {
+            "name": "solar generation needs a distribution bus",
+            "passed": true,
+            "details": "Bus connects solar power to battery"
+        },
+        {
+            "name": "occupied mount and non-finite data rejected",
+            "passed": true,
+            "details": "Both invalid inputs rejected"
+        },
+        {
+            "name": "sound speed and transonic drag",
+            "passed": true,
+            "details": "340.29 m/s at sea level; 295.07 m/s at 11 km; continuous finite drag envelope"
+        }
+    ]
+}
