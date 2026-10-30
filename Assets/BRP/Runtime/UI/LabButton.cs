@@ -45,6 +45,11 @@ namespace BRP
                 case "workshop":g.ReturnToWorkshop();break;
                 case "flight_controls":g.UI.ShowFlightToolbar();break;
                 case "map":g.ToggleMap();break;
+                case "ascent":g.ToggleAscent();break;
+                case "recover":g.PlanDeorbit();break;
+                case "warp":g.CycleTimeWarp();break;
+                case "throttle":g.AdjustThrottle(argument);break;
+                case "scale":g.ScaleAssembly(argument>0?1.15f:1/1.15f);break;
                 case "campaign":g.StartMission(System.Math.Min(20,g.Progress.completed.Count+1));g.UI.CloseDialog();break;
                 case "sandbox":g.StartSandbox();g.UI.CloseDialog();break;
                 case "trial":g.StartTimeTrial();g.UI.CloseDialog();break;

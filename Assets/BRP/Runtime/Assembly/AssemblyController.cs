@@ -52,7 +52,7 @@ namespace BRP
             {
                 if(Application.isPlaying) Destroy(view.gameObject);else DestroyImmediate(view.gameObject);
             }
-            views.Clear();Blueprint=craft.Clone();
+            views.Clear();detachedIds.Clear();Blueprint=craft.Clone();
             foreach(var placement in Blueprint.parts)
             {
                 var definition=Catalog.Find(placement.partId);
@@ -78,7 +78,7 @@ namespace BRP
 
         public PartView Spawn(PartDefinition definition)
         {
-            if(Blueprint.parts.Count>=128) return null;
+            if(views.Count>=128) return null;
             var placement=new PlacedPart {partId=definition.id};
             var view=CreateView(definition,placement);
             view.transform.position=assemblyRoot.position+new Vector3(-.85f,.2f,-.12f);
@@ -97,6 +97,12 @@ namespace BRP
             view.Placement.parentId=null;
             Changed?.Invoke();
             return result;
+        }
+        public List<PartView> DetachedGroup(PartView root)
+        {
+            var ids=new HashSet<string>{root.Placement.instanceId};bool changed;
+            do {changed=false;foreach(var view in views) if(!view.Attached&&ids.Contains(view.Placement.parentId??"")) changed|=ids.Add(view.Placement.instanceId);} while(changed);
+            return views.Where(view=>!view.Attached&&ids.Contains(view.Placement.instanceId)).ToList();
         }
 
         public bool TryTarget(PartView moving,out SnapTarget target)

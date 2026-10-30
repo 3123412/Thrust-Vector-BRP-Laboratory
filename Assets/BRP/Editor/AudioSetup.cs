@@ -43,7 +43,7 @@ namespace BRP.Editor
                 var importer=(AudioImporter)AssetImporter.GetAtPath(file);if(importer==null) continue;
                 var settings=importer.defaultSampleSettings;settings.quality=.85f;
                 settings.loadType=Path.GetFileName(file).Contains("engine")||file.EndsWith("ambience.wav")?AudioClipLoadType.CompressedInMemory:AudioClipLoadType.DecompressOnLoad;
-                importer.defaultSampleSettings=settings;importer.preloadAudioData=true;importer.SaveAndReimport();
+                settings.preloadAudioData=true;importer.defaultSampleSettings=settings;importer.SaveAndReimport();
             }
         }
     }

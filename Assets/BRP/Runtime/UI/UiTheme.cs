@@ -9,7 +9,7 @@ namespace BRP
     public static class UiTheme
     {
         public static readonly Color Ink=new Color(.027f,.037f,.043f,.97f);
-        public static readonly Color PanelColor=new Color(.045f,.058f,.064f,.94f);
+        public static readonly Color PanelColor=new Color(.035f,.045f,.05f,1);
         public static readonly Color Line=new Color(.25f,.31f,.32f,.5f);
         public static readonly Color TextColor=new Color(.91f,.91f,.86f);
         public static readonly Color Muted=new Color(.54f,.62f,.63f);
@@ -20,6 +20,7 @@ namespace BRP
         public static RectTransform Rect(string name,Transform parent,float x,float y,float w,float h)
         {
             var go=new GameObject(name,typeof(RectTransform));
+            go.layer=parent.gameObject.layer;
             var rect=go.GetComponent<RectTransform>();rect.SetParent(parent,false);
             rect.anchorMin=rect.anchorMax=new Vector2(0,1);rect.pivot=new Vector2(0,1);
             rect.anchoredPosition=new Vector2(x,-y);rect.sizeDelta=new Vector2(w,h);return rect;
@@ -40,6 +41,7 @@ namespace BRP
         {
             var r=Panel(text,parent,x,y,w,h,primary?Orange:new Color(.075f,.12f,.15f));
             var button=r.gameObject.AddComponent<UnityEngine.UI.Button>();
+            r.gameObject.AddComponent<LabButton>();
             var colors=button.colors;colors.normalColor=Color.white;colors.highlightedColor=new Color(.75f,.9f,.95f);colors.pressedColor=new Color(.5f,.65f,.72f);colors.disabledColor=new Color(.35f,.4f,.44f);button.colors=colors;
             if(action!=null) button.onClick.AddListener(action);
             var label=Text(r,text,6,0,w-12,h,w<90?12:17,primary?Ink:TextColor);label.alignment=TextAlignmentOptions.Midline;
@@ -48,10 +50,20 @@ namespace BRP
         public static UnityEngine.UI.Button Command(Transform parent,string text,float x,float y,float w,float h,string command,int argument=0,bool primary=false)
         {
             var button=Button(parent,text,x,y,w,h,null,primary);
-            var binding=button.gameObject.AddComponent<LabButton>();binding.command=command;binding.argument=argument;
+            var binding=button.gameObject.GetComponent<LabButton>();binding.command=command;binding.argument=argument;
             var accent=Panel("HoverLine",button.transform,0,h-2,w,2,new Color(Cyan.r,Cyan.g,Cyan.b,0));
             accent.GetComponent<UnityEngine.UI.Image>().raycastTarget=false;binding.accent=accent.GetComponent<UnityEngine.UI.Image>();
             return button;
+        }
+        public static UnityEngine.UI.Slider Slider(Transform parent,float x,float y,float width,float height,float value)
+        {
+            var root=Rect("Volume",parent,x,y,width,height);
+            var track=Panel("Track",root,0,height*.5f-2,width,4,new Color(.16f,.22f,.24f));
+            var fill=Panel("Fill",track,0,0,width,4,Cyan);
+            var handle=Panel("Handle",root,0,0,12,height,TextColor);
+            var slider=root.gameObject.AddComponent<UnityEngine.UI.Slider>();slider.fillRect=fill;slider.handleRect=handle;
+            slider.targetGraphic=handle.GetComponent<UnityEngine.UI.Image>();slider.minValue=0;slider.maxValue=1;slider.value=value;
+            return slider;
         }
         public static RectTransform Scroll(Transform parent,string name,float x,float y,float w,float h,out ScrollRect scroll)
         {

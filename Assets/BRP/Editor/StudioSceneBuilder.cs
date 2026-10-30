@@ -24,6 +24,7 @@ namespace BRP.Editor
         {
             Directory.CreateDirectory(Prefabs);Directory.CreateDirectory(Art+"/Thumbnails");
             AssetDatabase.Refresh();
+            RenderingSetup.Configure();
             var catalog=Resources.Load<PartCatalog>("BRP/Catalog");
             var assets=Resources.Load<LabSceneAssets>("BRP/SceneAssets");
             ConfigureMaterials();
@@ -47,12 +48,13 @@ namespace BRP.Editor
             var lighting=new GameObject("Lighting").transform;
             var sun=Light("MoonKey",lighting,LightType.Directional,new Color(.72f,.83f,1),1.25f,0);
             sun.transform.rotation=Quaternion.Euler(30,-35,0);sun.shadows=LightShadows.Soft;
-            Point("OverheadSoftbox",lighting,new Vector3(-1,5,-1),new Color(.68f,.82f,1),12,10);
-            Point("AmberRim",lighting,new Vector3(3,3,2),new Color(1,.52f,.23f),10,8);
-            Point("BenchFill",lighting,new Vector3(-3,2,-3),new Color(.5f,.75f,.84f),5,8);
-            Point("RoomBounce",lighting,new Vector3(0,4,5),new Color(.45f,.6f,.68f),10,18);
+            Point("OverheadSoftbox",lighting,new Vector3(-1,5,-1),new Color(.68f,.82f,1),50,10);
+            Point("AmberRim",lighting,new Vector3(3,3,2),new Color(1,.52f,.23f),40,8);
+            Point("BenchFill",lighting,new Vector3(-3,2,-3),new Color(.5f,.75f,.84f),25,8);
+            Point("RoomBounce",lighting,new Vector3(0,4,5),new Color(.45f,.6f,.68f),50,18);
             RenderSettings.skybox=assets.skyMaterial;RenderSettings.ambientMode=AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor=new Color(.12f,.17f,.22f);RenderSettings.ambientEquatorColor=new Color(.07f,.1f,.11f);RenderSettings.ambientGroundColor=new Color(.035f,.04f,.042f);
+            RenderSettings.ambientSkyColor=new Color(.3f,.35f,.4f);RenderSettings.ambientEquatorColor=new Color(.18f,.22f,.25f);RenderSettings.ambientGroundColor=new Color(.09f,.11f,.13f);
+            assets.skyMaterial.SetFloat("_Atmosphere",1);EditorUtility.SetDirty(assets.skyMaterial);
             RenderSettings.fog=true;RenderSettings.fogColor=new Color(.025f,.04f,.055f);RenderSettings.fogMode=FogMode.Exponential;RenderSettings.fogDensity=.012f;
             var cameraObject=new GameObject("Main Camera",typeof(Camera),typeof(AudioListener));cameraObject.tag="MainCamera";
             var camera=cameraObject.GetComponent<Camera>();camera.fieldOfView=42;camera.nearClipPlane=.035f;camera.farClipPlane=4000;camera.allowHDR=true;
@@ -64,14 +66,17 @@ namespace BRP.Editor
             string profilePath=Art+"/Materials/StudioVolume.asset";
             var profile=AssetDatabase.LoadAssetAtPath<VolumeProfile>(profilePath);
             if(profile==null) {profile=ScriptableObject.CreateInstance<VolumeProfile>();AssetDatabase.CreateAsset(profile,profilePath);}
+            profile.components.RemoveAll(component=>component==null);
             if(!profile.TryGet<Tonemapping>(out var tone)) tone=profile.Add<Tonemapping>();tone.mode.Override(TonemappingMode.ACES);
             if(!profile.TryGet<Bloom>(out var bloom)) bloom=profile.Add<Bloom>();bloom.intensity.Override(.35f);bloom.threshold.Override(1.15f);bloom.scatter.Override(.6f);
             if(!profile.TryGet<ColorAdjustments>(out var grade)) grade=profile.Add<ColorAdjustments>();grade.postExposure.Override(.2f);grade.contrast.Override(8);grade.saturation.Override(-7);
+            foreach(var component in profile.components) if(!AssetDatabase.Contains(component)) AssetDatabase.AddObjectToAsset(component,profile);
             volume.sharedProfile=profile;EditorUtility.SetDirty(profile);
             var environment=new GameObject("Workshop").transform;
             var room=(GameObject)PrefabUtility.InstantiatePrefab(assets.hangar,environment);room.name="Hangar Architecture";room.transform.localRotation=Quaternion.Euler(0,180,0);
             var bench=(GameObject)PrefabUtility.InstantiatePrefab(assets.workbench,environment);bench.name="Assembly Pedestal";
             var floor=environment.gameObject.AddComponent<BoxCollider>();floor.center=new Vector3(0,-.12f,0);floor.size=new Vector3(20,.25f,20);
+            var teleport=environment.gameObject.AddComponent<UnityEngine.XR.Interaction.Toolkit.Locomotion.Teleportation.TeleportationArea>();teleport.interactionLayers=1<<31;
             var desk=bench.AddComponent<BoxCollider>();desk.center=new Vector3(0,.96f,0);desk.size=new Vector3(2.9f,.14f,1.8f);
             Sign("WallBrand",environment,assets.font,"БРП / ОПЫТНОЕ КОНСТРУКТОРСКОЕ БЮРО",new Vector3(0,5.7f,8.2f),.15f);
             Sign("BayNumber",environment,assets.font,"01    /    СБОРКА",new Vector3(-4,4.55f,8.2f),.12f);
@@ -90,6 +95,7 @@ namespace BRP.Editor
             var events=new GameObject("EventSystem",typeof(EventSystem),typeof(InputSystemUIInputModule));events.transform.SetParent(interaction.transform);events.GetComponent<InputSystemUIInputModule>().AssignDefaultActions();
             var systems=new GameObject("Game Systems");
             var game=systems.AddComponent<LaboratoryGame>();game.mainCamera=camera;
+            systems.AddComponent<VROperatorControls>().game=game;
             var assembly=systems.AddComponent<AssemblyController>();
             var audio=new GameObject("Audio").AddComponent<SoundEngine>();audio.transform.SetParent(systems.transform);
             audio.effects=AudioSource(audio.transform,"Interface");audio.engine=AudioSource(audio.transform,"Main Engine");audio.engineLow=AudioSource(audio.transform,"Engine Low");
@@ -99,8 +105,23 @@ namespace BRP.Editor
             var root=new GameObject("Assembly / Editable Rocket").transform;root.SetParent(environment,false);root.position=new Vector3(0,1.42f,0);root.localScale=Vector3.one*AssemblyController.Scale;
             assembly.Initialize(catalog,root);assembly.Load(CraftPresets.Create(catalog,1),false);
             var ui=new GameObject("Interface",typeof(RectTransform)).AddComponent<LaboratoryUI>();
+            ui.gameObject.layer=5;
             game.ConfigureScene(catalog,assets,environment,root,assembly,ui,audio);
             ui.BuildLayout(game,assets.font);ui.PopulateCatalog(PartCategory.Structure);ui.UpdateStats();ui.ShowHome();
+            game.FitAssembly();
+            if(assets.xrRig!=null)
+            {
+                var rig=(GameObject)PrefabUtility.InstantiatePrefab(assets.xrRig);rig.name="XR Origin / OpenXR";rig.SetActive(false);game.ConfigureRig(rig);
+                teleport.teleportationProvider=rig.GetComponentInChildren<UnityEngine.XR.Interaction.Toolkit.Locomotion.Teleportation.TeleportationProvider>(true);
+            }
+            var monitorTarget=AssetDatabase.LoadAssetAtPath<RenderTexture>(Art+"/Materials/FlightMonitor.renderTexture");
+            if(monitorTarget==null) {monitorTarget=new RenderTexture(1600,900,24);AssetDatabase.CreateAsset(monitorTarget,Art+"/Materials/FlightMonitor.renderTexture");}
+            var monitorCamera=new GameObject("Flight Monitor Camera").AddComponent<Camera>();monitorCamera.CopyFrom(camera);monitorCamera.cullingMask=1<<29;monitorCamera.targetTexture=monitorTarget;monitorCamera.gameObject.SetActive(false);monitorCamera.gameObject.AddComponent<UniversalAdditionalCameraData>().renderPostProcessing=true;
+            game.flightCamera=monitorCamera;
+            var monitor=new GameObject("Flight Monitor / VR",typeof(RectTransform),typeof(Canvas));
+            monitor.transform.SetParent(environment);var monitorCanvas=monitor.GetComponent<Canvas>();monitorCanvas.renderMode=RenderMode.WorldSpace;
+            var monitorRect=(RectTransform)monitor.transform;monitorRect.sizeDelta=new Vector2(1600,900);monitorRect.position=new Vector3(0,2.6f,2);monitorRect.localScale=Vector3.one*.0025f;
+            var image=monitor.AddComponent<UnityEngine.UI.RawImage>();image.texture=monitorTarget;monitor.SetActive(false);game.flightMonitor=monitor;
             var effectPreview=(GameObject)PrefabUtility.InstantiatePrefab(assets.engineEffect);effectPreview.name="Engine Effect / Preview";effectPreview.SetActive(false);
             EditorSceneManager.SaveScene(scene,"Assets/BRP/Scenes/Laboratory.unity");
             PrefabUtility.SaveAsPrefabAsset(ui.gameObject,Prefabs+"/LaboratoryInterface.prefab");
@@ -162,6 +183,13 @@ namespace BRP.Editor
         static GameObject BuildEngineEffect(LabSceneAssets assets)
         {
             var go=new GameObject("EngineExhaust");var effect=go.AddComponent<EngineVfx>();
+            var mesh=AssetDatabase.LoadAssetAtPath<GameObject>(Art+"/Models/exhaust_core.fbx");
+            if(mesh!=null)
+            {
+                var core=(GameObject)PrefabUtility.InstantiatePrefab(mesh,go.transform);core.name="Continuous Hot Core";
+                effect.continuousCore=core.GetComponentInChildren<Renderer>();
+                effect.continuousCore.sharedMaterial=Material("ContinuousPlume","BRP/Plume",new Color(3,1.4f,.35f));
+            }
             effect.core=Particles(go.transform,"WhiteHotCore",assets.flameMaterial,new Color(1,.84f,.52f,.9f),.2f,.24f,14,300);
             effect.plume=Particles(go.transform,"TurbulentPlume",assets.flameMaterial,new Color(.75f,.34f,.09f,.55f),.45f,.65f,8,200);
             effect.smoke=Particles(go.transform,"ExhaustSmoke",assets.smokeMaterial,new Color(.7f,.75f,.79f,.35f),3.5f,1.1f,2.5f,100);

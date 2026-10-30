@@ -12,6 +12,7 @@ namespace BRP
         public List<int> completed = new List<int>();
         public List<float> bestTimes = new List<float>();
         public float volume = 0.65f;
+        public float interfaceVolume=.85f,engineVolume=.8f,environmentVolume=.6f;
         public int quality = 1;
         public bool tutorialSeen;
         public List<CraftBlueprint> blueprints = new List<CraftBlueprint>();
@@ -30,7 +31,7 @@ namespace BRP
                 try
                 {
                     var progress = JsonUtility.FromJson<PlayerProgress>(File.ReadAllText(path));
-                    if (progress != null && progress.version == 1 && progress.completed != null && progress.blueprints != null)
+                    if (progress != null && progress.version == 1 && progress.completed != null && progress.blueprints != null&&progress.bestTimes!=null&&float.IsFinite(progress.volume))
                         return progress;
                 }
                 catch (Exception e) when (e is IOException || e is ArgumentException)

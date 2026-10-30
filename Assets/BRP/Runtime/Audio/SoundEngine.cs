@@ -13,6 +13,13 @@ namespace BRP
         AudioClip[] cues;
         AudioClip hover;
         float hoverAfter,engineSetting;
+        float interfaceGain=.85f,engineGain=.8f,environmentGain=.6f;
+        public void ApplyVolumes(PlayerProgress settings)
+        {
+            interfaceGain=Mathf.Clamp01(settings.interfaceVolume);engineGain=Mathf.Clamp01(settings.engineVolume);environmentGain=Mathf.Clamp01(settings.environmentVolume);
+            if(effects!=null) effects.volume=.7f*interfaceGain;
+            if(mechanical!=null) mechanical.volume=.65f*interfaceGain;
+        }
         void Awake()
         {
             effects=Source(effects,"Interface",interfaceGroup,false,0);
@@ -20,7 +27,7 @@ namespace BRP
             engineLow=Source(engineLow,"Engine Body",engineGroup,true,0);
             ambience=Source(ambience,"Control Room",environmentGroup,true,.055f);
             mechanical=Source(mechanical,"Mechanical",environmentGroup,false,0);
-            effects.volume=.7f;mechanical.volume=.65f;
+            effects.volume=.7f*interfaceGain;mechanical.volume=.65f*interfaceGain;
             cues=new AudioClip[8];
             for(int i=0;i<cues.Length;i++) cues[i]=Resources.Load<AudioClip>("BRP/Audio/"+((SoundCue)i).ToString().ToLowerInvariant());
             hover=Resources.Load<AudioClip>("BRP/Audio/hover");
@@ -57,11 +64,11 @@ namespace BRP
         {
             if(engine==null) return;
             float ramp=Time.unscaledDeltaTime*(engineSetting>0?1.6f:.8f);
-            engine.volume=Mathf.MoveTowards(engine.volume,Mathf.Sqrt(engineSetting)*.5f,ramp);
+            engine.volume=Mathf.MoveTowards(engine.volume,Mathf.Sqrt(engineSetting)*.5f*engineGain,ramp);
             engine.pitch=Mathf.Lerp(.85f,1.06f,engineSetting);
-            engineLow.volume=Mathf.MoveTowards(engineLow.volume,engineSetting*.15f,ramp*.6f);
+            engineLow.volume=Mathf.MoveTowards(engineLow.volume,engineSetting*.15f*engineGain,ramp*.6f);
             engineLow.pitch=.8f+engineSetting*.15f;
-            ambience.volume=Mathf.Lerp(ambience.volume,engineSetting>0?.008f:.055f,Time.unscaledDeltaTime*2);
+            ambience.volume=Mathf.Lerp(ambience.volume,(engineSetting>0?.008f:.055f)*environmentGain,Time.unscaledDeltaTime*2);
         }
     }
 }

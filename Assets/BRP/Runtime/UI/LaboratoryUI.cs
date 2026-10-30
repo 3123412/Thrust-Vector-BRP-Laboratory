@@ -19,6 +19,9 @@ namespace BRP
         [SerializeField] RectTransform flightActions;
         readonly List<GameObject> workshopControls=new List<GameObject>();
         [SerializeField] RectTransform flightPanel;
+        [SerializeField] RectTransform flightSystems,fuelBar,energyBar,throttleBar;
+        [SerializeField] TextMeshProUGUI systemData,orientationData;
+        [SerializeField] AttitudeIndicator attitude;
         PartCategory category;
         public bool ModalOpen=>modal!=null||(homePanel!=null&&homePanel.gameObject.activeSelf);
 
@@ -32,10 +35,11 @@ namespace BRP
         public void BuildLayout(LaboratoryGame owner,TMP_FontAsset font)
         {
             game=owner;UiTheme.Font=font;
-            canvas=gameObject.AddComponent<Canvas>();canvas.renderMode=RenderMode.ScreenSpaceCamera;
+            canvas=gameObject.AddComponent<Canvas>();canvas.renderMode=RenderMode.ScreenSpaceOverlay;
             canvas.worldCamera=owner.mainCamera;canvas.planeDistance=.5f;
             var scaler=gameObject.AddComponent<CanvasScaler>();scaler.uiScaleMode=CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution=new Vector2(1920,1080);scaler.matchWidthOrHeight=.5f;
+            scaler.screenMatchMode=CanvasScaler.ScreenMatchMode.Expand;
             gameObject.AddComponent<GraphicRaycaster>();root=GetComponent<RectTransform>();
             var header=UiTheme.Panel("Navigation",root,24,20,1872,74,UiTheme.Ink);
             UiTheme.Text(header,"БРП",24,10,88,52,34,UiTheme.TextColor);
@@ -47,6 +51,8 @@ namespace BRP
             for(int i=0;i<links.Length;i++) UiTheme.Command(header,links[i],960+i*155,17,145,40,commands[i]);
             UiTheme.Command(header,"Выход",1755,17,96,40,"home");
             phase=UiTheme.Text(root,"АНГАР 01     /     СБОРКА",42,112,650,30,12,UiTheme.Cyan);
+            UiTheme.Command(root,"−",922,107,34,30,"scale",-1);
+            UiTheme.Command(root,"+",966,107,34,30,"scale",1);
             status=UiTheme.Text(root,"ГОТОВ К РАБОТЕ",1400,112,470,24,11,UiTheme.Muted);status.alignment=TextAlignmentOptions.Right;
             left=UiTheme.Panel("PartsLibrary",root,24,156,324,764);
             UiTheme.Text(left,"КОМПОНЕНТЫ",20,18,280,32,20);
@@ -107,7 +113,25 @@ namespace BRP
 
         void CreateFlightControls()
         {
-            flightPanel=UiTheme.Panel("FlightReadout",root,24,156,324,495);
+            flightSystems=UiTheme.Panel("FlightSystems",root,1572,156,324,764);
+            UiTheme.Text(flightSystems,"ОРИЕНТАЦИЯ И СИСТЕМЫ",22,20,280,29,17);
+            var ball=UiTheme.Rect("Attitude",flightSystems,56,70,212,212);
+            attitude=ball.gameObject.AddComponent<AttitudeIndicator>();attitude.raycastTarget=false;
+            orientationData=UiTheme.Text(flightSystems,"ТАНГАЖ 90°",22,295,280,24,12,UiTheme.Cyan);orientationData.alignment=TextAlignmentOptions.Center;
+            string[] gauges={"ТЯГА","ТОПЛИВО","ПИТАНИЕ"};
+            RectTransform[] bars=new RectTransform[3];
+            for(int i=0;i<3;i++)
+            {
+                UiTheme.Text(flightSystems,gauges[i],22,346+i*45,110,21,11,UiTheme.Muted);
+                var track=UiTheme.Panel(gauges[i],flightSystems,134,351+i*45,166,5,new Color(.13f,.17f,.19f));
+                bars[i]=UiTheme.Panel("Fill",track,0,0,166,5,i==0?UiTheme.Orange:UiTheme.Cyan);
+            }
+            throttleBar=bars[0];fuelBar=bars[1];energyBar=bars[2];
+            systemData=UiTheme.Text(flightSystems,"",22,500,280,116,14,UiTheme.Muted);
+            UiTheme.Command(flightSystems,"Программа выведения",20,635,284,43,"ascent",0,true);
+            UiTheme.Command(flightSystems,"Возвращение капсулы",20,691,284,43,"recover");
+            UiTheme.Command(root,"Время ×  /  T",365,107,170,32,"warp");
+            flightPanel=UiTheme.Panel("FlightReadout",root,24,156,324,574);
             UiTheme.Text(flightPanel,"ПОЛЁТНЫЕ ДАННЫЕ",22,20,280,28,18);
             flightValues=new TextMeshProUGUI[4];
             string[] labels={"ВЫСОТА / КМ","СКОРОСТЬ / М/С","АПОГЕЙ / КМ","ПЕРИГЕЙ / КМ"};
@@ -118,6 +142,9 @@ namespace BRP
                 flightValues[i]=UiTheme.Text(flightPanel,"0.0",22,y+27,280,54,38,i<2?UiTheme.TextColor:UiTheme.Cyan);
             }
             flightData=UiTheme.Text(flightPanel,"",22,458,280,26,12,UiTheme.Muted);
+            UiTheme.Command(flightPanel,"Тяга −",20,508,85,42,"throttle",-1);
+            UiTheme.Command(flightPanel,"Стоп",117,508,85,42,"throttle",0);
+            UiTheme.Command(flightPanel,"Тяга +",214,508,90,42,"throttle",1);
             flightActions=UiTheme.Panel("FlightCommands",root,373,947,1174,76,UiTheme.Ink);
             UiTheme.Command(flightActions,"СТУПЕНЬ  /  Space",14,12,240,52,"next_stage",0,true);
             UiTheme.Command(flightActions,"Отделить груз",266,15,172,45,"payload");
@@ -131,13 +158,14 @@ namespace BRP
         {
             left.gameObject.SetActive(!active);right.gameObject.SetActive(!active);bottom.gameObject.SetActive(!active);
             flightPanel.gameObject.SetActive(active);flightActions.gameObject.SetActive(active);
+            flightSystems.gameObject.SetActive(active);
             missionTitle.gameObject.SetActive(!active);missionGoal.gameObject.SetActive(!active);
             phase.text=active?"КОСМОДРОМ     /     ПОЛЁТНЫЕ ИСПЫТАНИЯ":"АНГАР 01     /     ИНЖЕНЕРНАЯ СБОРКА";
         }
 
         public void ShowFlightToolbar()
         {
-            var r=Dialog("УПРАВЛЕНИЕ ПОЛЁТОМ",790,620);
+            var r=Dialog("УПРАВЛЕНИЕ ПОЛЁТОМ",790,730);
             string[] modes={"Вручную","Удерживать","По скорости","Против скорости","Радиально","Нормаль","На цель"};
             for(int i=0;i<modes.Length;i++) {int mode=i;UiTheme.Button(r,modes[i],35+(i%3)*238,90+(i/3)*54,225,42,()=>{game.SetGuidance((GuidanceMode)mode);CloseDialog();});}
             UiTheme.Text(r,"Тяга: Shift / Ctrl. Отключить: X. W/S и A/D: наклон. Q/E: крен.\nI/K, J/L, U/O: двигатели сближения.\nM: карта. T: ускорение времени. B: тормоз. Backspace: спасение.",35,270,720,100,17,UiTheme.Muted);
@@ -145,6 +173,10 @@ namespace BRP
             UiTheme.Button(r,"Стыковать",393,400,342,46,()=>{CloseDialog();game.TryDock();});
             UiTheme.Button(r,"Тормозной манёвр",35,460,342,46,()=>{game.PlanDeorbit();CloseDialog();});
             UiTheme.Button(r,"Карта / траектория",393,460,342,46,()=>{game.ToggleMap();CloseDialog();});
+            UiTheme.Button(r,"Помощник сближения",35,520,342,46,()=>{game.ToggleRendezvous();CloseDialog();});
+            UiTheme.Button(r,"Топливный клапан",393,520,342,46,()=>{game.ToggleValve();CloseDialog();});
+            UiTheme.Button(r,"Отделить капсулу",35,580,342,46,()=>{game.SeparateCapsule();CloseDialog();});
+            UiTheme.Button(r,"Аварийное спасение",393,580,342,46,()=>{game.Abort();CloseDialog();});
         }
 
         public void PopulateCatalog(PartCategory next)
@@ -159,7 +191,7 @@ namespace BRP
             for(int i=0;i<parts.Length;i++)
             {
                 var d=parts[i];var card=UiTheme.Panel(d.id,catalogContent,0,i*100,286,92,new Color(.067f,.081f,.087f));
-                if(d.thumbnail!=null) {var icon=UiTheme.Panel("Preview",card,6,10,67,67,new Color(.11f,.13f,.14f));var image=icon.GetComponent<UnityEngine.UI.Image>();image.sprite=d.thumbnail;image.preserveAspect=true;image.raycastTarget=false;}
+                if(d.thumbnail!=null) {var icon=UiTheme.Panel("Preview",card,6,10,67,67,Color.white);var image=icon.GetComponent<UnityEngine.UI.Image>();image.sprite=d.thumbnail;image.preserveAspect=true;image.raycastTarget=false;}
                 UiTheme.Text(card,(Array.IndexOf(game.Catalog.parts,d)+1).ToString("D2"),82,64,28,18,10,UiTheme.Cyan);
                 UiTheme.Text(card,d.title,82,13,190,43,16);
                 UiTheme.Text(card,$"{d.dryMass:N0} КГ    /    {(d.surface?"БОКОВОЙ УЗЕЛ":"ОСЕВОЙ УЗЕЛ")}",118,64,155,20,9,UiTheme.Muted);
@@ -196,6 +228,15 @@ namespace BRP
             flightValues[0].text=(body.Altitude/1000).ToString("F2");flightValues[1].text=body.SurfaceVelocity.Magnitude.ToString("F0");
             flightValues[2].text=Format(orbit.apoapsis);flightValues[3].text=Format(orbit.periapsis);
             flightData.text=$"T+{body.elapsed:0000}с   Тяга {body.throttle*100:F0}%   {body.Temperature:F0}К";
+            attitude.SetState(body);
+            bool horizon=body.Powered&&(body.Has(PartKind.HorizonSensor)||body.Has(PartKind.Capsule));
+            attitude.color=horizon?Color.white:new Color(1,1,1,.25f);
+            orientationData.text=horizon?$"НАКЛОН {body.Tilt:F1}°   /   СТУПЕНЬ {body.stage+1}":"ДАТЧИК ГОРИЗОНТА НЕДОСТУПЕН";
+            double capacity=body.parts.Where(p=>!p.destroyed).Sum(p=>(double)p.definition.fuelCapacity+p.definition.oxidizerCapacity);
+            fuelBar.sizeDelta=new Vector2(166*(float)(body.Fuel/System.Math.Max(1,capacity)),5);
+            energyBar.sizeDelta=new Vector2(166*(float)(body.Energy/System.Math.Max(1,body.EnergyCapacity)),5);
+            throttleBar.sizeDelta=new Vector2(166*(float)body.throttle,5);
+            systemData.text=$"Топливо  {body.Fuel:N0} кг\nЗаряд  {body.Energy/1000:F1} кДж\nПерегрузка  {body.maxG:F1} g\n"+(game.Target!=null?$"До узла  {distance:F1} м\nСближение  {relativeSpeed:F2} м/с":body.Telemetry?"Телеметрия  связь установлена":"Телеметрия  нет связи");
             status.text=$"{body.lastEvent.ToUpperInvariant()}   /   ×{game.TimeWarp}";
         }
 
@@ -221,6 +262,7 @@ namespace BRP
             left.gameObject.SetActive(false);right.gameObject.SetActive(false);bottom.gameObject.SetActive(false);
             missionTitle.gameObject.SetActive(false);missionGoal.gameObject.SetActive(false);
             flightPanel.gameObject.SetActive(false);flightActions.gameObject.SetActive(false);
+            flightSystems.gameObject.SetActive(false);
         }
         public void ShowMissions()
         {
@@ -279,15 +321,23 @@ namespace BRP
         }
         public void ShowSettings()
         {
-            var r=Dialog("НАСТРОЙКИ",820,600);
+            var r=Dialog("НАСТРОЙКИ",820,740);
             UiTheme.Text(r,"Громкость",35,110,740,30,22);
             UiTheme.Button(r,"Тише",35,160,230,48,()=>game.SetVolume(-.1f));
             UiTheme.Button(r,"Громче",285,160,230,48,()=>game.SetVolume(.1f));
             UiTheme.Button(r,"Без звука",535,160,245,48,()=>game.SetVolume(-1));
-            UiTheme.Text(r,"Графика",35,250,740,30,22);
+            string[] channels={"Интерфейс и механика","Двигатели","Атмосфера ангара"};
+            float[] levels={game.Progress.interfaceVolume,game.Progress.engineVolume,game.Progress.environmentVolume};
+            for(int i=0;i<3;i++)
+            {
+                int channel=i;float y=245+i*55;
+                UiTheme.Text(r,channels[i],35,y,310,30,17,UiTheme.Muted);
+                var slider=UiTheme.Slider(r,350,y,425,30,levels[i]);slider.onValueChanged.AddListener(value=>game.SetAudioChannel(channel,value));
+            }
+            UiTheme.Text(r,"Графика",35,435,740,30,22);
             string[] quality={"Производительность","Баланс","Качество"};
-            for(int i=0;i<3;i++) {int value=i;UiTheme.Button(r,quality[i],35+i*250,300,240,50,()=>game.SetQuality(value));}
-            UiTheme.Button(r,"Выйти из игры",35,440,745,50,()=>Application.Quit());
+            for(int i=0;i<3;i++) {int value=i;UiTheme.Button(r,quality[i],35+i*250,485,240,50,()=>game.SetQuality(value));}
+            UiTheme.Button(r,"Выйти из игры",35,620,745,50,()=>Application.Quit());
         }
         public void ShowHelp()
         {

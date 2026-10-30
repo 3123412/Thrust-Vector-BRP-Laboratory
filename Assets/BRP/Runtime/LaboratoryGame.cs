@@ -29,11 +29,16 @@ namespace BRP
         public bool IsFlying=>Flight!=null;
         public bool OnStand { get; private set; }
         public bool TimeTrial { get; private set; }
+        public bool VREnabled=>vrEnabled;
         public Camera mainCamera;
+        public Camera flightCamera;
+        public GameObject flightMonitor;
         public Transform workshop;
         [SerializeField] Transform benchRoot;
         FlightPresentation presentation;
-        GameObject flightScene,xrRig;
+        GameObject flightScene;
+        [SerializeField] GameObject xrRig;
+        int workshopMask=-1;
         LineRenderer snapMarker,comLine;
         PartView dragging;
         List<PartView> dragGroup;
@@ -46,12 +51,17 @@ namespace BRP
         bool missionDone,resultShown,orbitReached,vrEnabled;
         readonly List<FlightBody> debris=new List<FlightBody>();
         readonly List<FlightSample> samples=new List<FlightSample>();
+        public AscentProgram Ascent { get; }=new AscentProgram();
+        readonly RecoveryProgram recovery=new RecoveryProgram();
+        readonly RendezvousProgram rendezvous=new RendezvousProgram();
 
         void Awake()
         {
             Instance=this;Application.runInBackground=true;Application.targetFrameRate=90;
             if(Catalog==null||Assets==null||workshop==null||Assembly==null||UI==null) throw new InvalidOperationException("Open the authored Laboratory scene");
             Progress=SaveStore.Load();Missions=MissionDefinition.All;AudioListener.volume=Progress.volume;
+            Sound.ApplyVolumes(Progress);
+            QualitySettings.SetQualityLevel(Mathf.Min(QualitySettings.names.Length-1,Mathf.Clamp(Progress.quality,0,2)*2+1),true);
             Assembly.Initialize(Catalog,benchRoot);
             Assembly.Changed+=OnAssemblyChanged;
             UI.Initialize(this,Assets.font);
@@ -64,6 +74,25 @@ namespace BRP
         {
             Catalog=catalog;Assets=assets;workshop=environment;benchRoot=assemblyTransform;Assembly=assembly;UI=ui;Sound=sound;
             Progress=new PlayerProgress();Missions=MissionDefinition.All;
+        }
+        public void ConfigureRig(GameObject rig) => xrRig=rig;
+        public void ScaleAssembly(float factor)
+        {
+            if(IsFlying) return;
+            float scale=Mathf.Clamp(benchRoot.localScale.x*factor,.13f,.5f);
+            benchRoot.localScale=Vector3.one*scale;
+            float bottom=Assembly.Blueprint.parts.Select(p=>p.position.y).DefaultIfEmpty(0).Min();
+            benchRoot.position=new Vector3(0,1.06f-bottom*scale,0);
+            OnAssemblyChanged();
+        }
+        public void FitAssembly()
+        {
+            if(Assembly.Blueprint.parts.Count==0) return;
+            float bottom=Assembly.Blueprint.parts.Min(p=>p.position.y);
+            float top=Assembly.Blueprint.parts.Max(p=>p.position.y+Catalog.Find(p.partId).height);
+            float scale=Mathf.Min(AssemblyController.Scale,2.5f/Mathf.Max(1,top-bottom));
+            benchRoot.localScale=Vector3.one*scale;benchRoot.position=new Vector3(0,1.06f-bottom*scale,0);
+            if(Application.isPlaying) OnAssemblyChanged();
         }
 
         LineRenderer CreateLine(string name,Color color,float width)
@@ -125,7 +154,8 @@ namespace BRP
         public void DetachSelected()
         {
             if(Selected==null||IsFlying) return;
-            BeginDrag(Selected,true);Toast("Перенесите подсборку и нажмите ЛКМ для установки");
+            if(vrEnabled) {Assembly.Detach(Selected);Toast("Подсборка разблокирована. Захватите её контроллером.");}
+            else {BeginDrag(Selected,true);Toast("Перенесите подсборку и нажмите ЛКМ для установки");}
         }
         public void DeleteSelected() {if(Selected!=null&&!IsFlying) {Assembly.Delete(Selected);Selected=null;Sound.Play(SoundCue.Click);}}
         public void SymmetrySelected() {if(Selected!=null&&!IsFlying) Assembly.Symmetry(Selected);}
@@ -136,6 +166,7 @@ namespace BRP
             if(TimeTrial) {Toast("В сборке на время готовые чертежи отключены");return;}
             if(IsFlying) ReturnToWorkshop();
             Assembly.Load(CraftPresets.Create(Catalog,level));Selected=null;Sound.Play(SoundCue.Click);
+            FitAssembly();
         }
         public void SaveBlueprint()
         {
@@ -163,20 +194,30 @@ namespace BRP
             Toast(CurrentMission.brief);
         }
 
-        public void StartFlight(bool stand)
+        public void StartFlight(bool stand,bool orbital=false)
         {
             if(IsFlying) return;
+            EndDrag();
             var errors=Assembly.Blueprint.Validate(Catalog);
-            if(!Assembly.Blueprint.parts.Any(p=>Catalog.Find(p.partId).IsEngine)) errors.Add("Установите двигатель");
+            if(!orbital&&!Assembly.Blueprint.parts.Any(p=>Catalog.Find(p.partId).IsEngine)) errors.Add("Установите двигатель");
             if(errors.Count>0) {Toast(string.Join(" · ",errors.Take(2)));Sound.Play(SoundCue.Error);return;}
             EndDrag();Selected=null;OnStand=stand;Flight=new FlightBody(Assembly.Blueprint.Clone(),Catalog);
             Flight.windSpeed=CurrentMission?.wind??0;Flight.launched=true;
+            Flight.lastEvent=stand?"Огневые испытания":"Двигатели работают";
+            recovery.active=false;rendezvous.active=false;Ascent.active=false;
             debris.Clear();Target=null;Payload=null;TimeWarp=1;orbitPowerTime=0;orbitReached=false;resultShown=false;flightAccumulator=0;samples.Clear();
             Flight.PartFailed+=p=> {Sound.Play(SoundCue.Explosion);if(presentation!=null) presentation.Burst(p.placement.position);};
-            workshop.gameObject.SetActive(false);comLine.gameObject.SetActive(false);snapMarker.positionCount=0;
+            workshop.gameObject.SetActive(vrEnabled);benchRoot.gameObject.SetActive(false);comLine.gameObject.SetActive(false);snapMarker.positionCount=0;
             flightScene=new GameObject("FlightScene");presentation=flightScene.AddComponent<FlightPresentation>();
-            presentation.Initialize(Flight,Assets,mainCamera);
+            workshopMask=mainCamera.cullingMask;
+            if(vrEnabled)
+            {
+                flightMonitor.SetActive(true);flightCamera.gameObject.SetActive(true);mainCamera.cullingMask&=~(1<<29);
+                presentation.Initialize(Flight,Assets,flightCamera);
+            }
+            else {mainCamera.cullingMask=(1<<29)|(1<<5);presentation.Initialize(Flight,Assets,mainCamera);}
             UI.SetFlight(true);UI.CloseDialog();Sound.Play(SoundCue.Launch);
+            SetLocomotion(false);
             Toast(stand?"Стенд: X отключает тягу. F открывает команды.":"Запуск. F: команды, Space: ступень, M: орбитальная карта.");
         }
         public void ReturnToWorkshop()
@@ -185,11 +226,21 @@ namespace BRP
             Flight=null;Target=null;Payload=null;debris.Clear();OnStand=false;TimeWarp=1;
             if(flightScene!=null) Destroy(flightScene);
             if(workshop!=null) workshop.gameObject.SetActive(true);
+            if(benchRoot!=null) benchRoot.gameObject.SetActive(true);
+            if(flightMonitor!=null) flightMonitor.SetActive(false);
+            if(flightCamera!=null) flightCamera.gameObject.SetActive(false);
+            if(mainCamera!=null) mainCamera.cullingMask=workshopMask;
             if(mainCamera!=null) mainCamera.farClipPlane=4000;
-            if(Assets!=null) {RenderSettings.skybox=Assets.skyMaterial;RenderSettings.fog=true;}
+            if(Assets!=null) {RenderSettings.skybox=Assets.skyMaterial;Assets.skyMaterial.SetFloat("_Atmosphere",1);RenderSettings.fog=true;}
             if(comLine!=null) comLine.gameObject.SetActive(true);
             if(UI!=null) UI.SetFlight(false);
             if(Sound!=null) Sound.SetEngine(0);SetCamera();
+            SetLocomotion(true);
+        }
+        void SetLocomotion(bool enabled)
+        {
+            if(!vrEnabled||xrRig==null) return;
+            foreach(var provider in xrRig.GetComponentsInChildren<UnityEngine.XR.Interaction.Toolkit.Locomotion.LocomotionProvider>(true)) provider.enabled=enabled;
         }
         public void NextStage()
         {
@@ -209,36 +260,71 @@ namespace BRP
         public void StartOrbitalPractice()
         {
             if(CurrentMission!=null&&CurrentMission.id!=18&&CurrentMission.id!=19) {Toast("Орбитальный стенд доступен в свободном режиме и миссиях сближения");return;}
-            if(Flight==null) {LoadPreset(2);StartFlight(false);}
+            if(Flight!=null) ReturnToWorkshop();
+            Assembly.Load(CraftPresets.OrbitalVehicle(Catalog));StartFlight(false,true);
             if(Flight==null) return;
             double radius=OrbitalMechanics.Radius+180000;
             Flight.position=new DVector3(0,radius,0);Flight.velocity=new DVector3(Math.Sqrt(OrbitalMechanics.Mu/radius),0,0);
             Flight.throttle=0;Flight.guidance=GuidanceMode.Manual;
-            Target=new FlightBody(CraftPresets.Create(Catalog,2),Catalog);
-            Target.position=Flight.position+new DVector3(0,0,35);Target.velocity=Flight.velocity;Target.throttle=0;Target.launched=true;
-            Target.orientation=Flight.orientation;Flight.lastEvent="Орбитальный стенд / высота 180 км";presentation.map=true;
+            Target=new FlightBody(CraftPresets.OrbitalVehicle(Catalog),Catalog);
+            Target.position=Flight.position+new DVector3(0,80,0);Target.velocity=Flight.velocity;Target.throttle=0;Target.launched=true;
+            Target.orientation=new DQuaternion(Quaternion.Euler(0,0,180));Flight.lastEvent="Орбитальный стенд / высота 180 км";presentation.map=false;
             Toast("Орбитальный стенд: I/K, J/L, U/O для сближения");
         }
         public void TryDock()
         {
             if(Flight==null||Target==null) {Toast("Сначала выберите цель на орбитальном стенде");return;}
-            double separation=(Flight.position-Target.position).Magnitude;
-            double speed=(Flight.velocity-Target.velocity).Magnitude;
-            float angle=Quaternion.Angle(Flight.orientation.Float,Target.orientation.Float);
             if(!Flight.Has(PartKind.DockingPort)||!Target.Has(PartKind.DockingPort)) {Toast("Нужны совместимые стыковочные узлы");return;}
-            if(separation>2||speed>.2||angle>5) {Toast($"Для стыковки: менее 2 м, 0,2 м/с и 5°. Сейчас {separation:F1} м / {speed:F2} м/с");return;}
-            Flight.Dock(Target);Target=null;Sound.Play(SoundCue.Snap);Toast("Стыковка выполнена");
+            if(!Flight.CanDock(Target,out double separation,out double speed,out double angle)) {Toast($"Узлы: {separation:F1} м / {speed:F2} м/с / {angle:F1}°. Нужно ≤0,6 м / 0,2 м/с / 5°");return;}
+            Flight.Dock(Target);Target=null;rendezvous.active=false;Flight.translationInput=new DVector3();Sound.Play(SoundCue.Snap);Toast("Стыковка выполнена");
         }
         public void PlanDeorbit()
         {
             if(Flight==null) return;
-            Flight.guidance=GuidanceMode.Retrograde;Flight.throttle=.25;
-            Toast("Развернитесь против скорости. Тормозите до снижения перигея ниже 30 км.");
+            Ascent.active=false;recovery.active=true;Flight.guidance=GuidanceMode.Retrograde;
+            Toast("Программа возвращения: торможение, отделение капсулы и раскрытие парашютов");
+        }
+        public void ToggleAscent()
+        {
+            if(Flight==null||OnStand) return;
+            Ascent.active=!Ascent.active;recovery.active=false;
+            Toast(Ascent.active?"Программа выведения / целевая орбита 180 км":"Программа выведения отключена");
+        }
+        public void ToggleRendezvous()
+        {
+            if(Target==null) {Toast("Сначала откройте орбитальный стенд");return;}
+            rendezvous.active=!rendezvous.active;Toast(rendezvous.active?"Помощник сближения включён":"Ручное сближение");
+        }
+        public void ToggleValve() {if(Flight==null) return;Flight.valveOpen=!Flight.valveOpen;Toast(Flight.valveOpen?"Топливный клапан открыт":"Топливный клапан закрыт");}
+        public void SeparateCapsule()
+        {
+            if(Flight==null) return;
+            var detached=Flight.SeparateCapsule();if(detached!=null) {debris.Add(detached);Sound.Play(SoundCue.Separate);}
+            Toast(Flight.lastEvent);
+        }
+        void UpdatePrograms(double dt)
+        {
+            if(Ascent.active) {var detached=Ascent.Update(Flight,dt);if(detached!=null) debris.Add(detached);}
+            if(Target!=null&&rendezvous.Update(Flight,Target)) TryDock();
+            if(!recovery.active) return;
+            Ascent.active=false;
+            var carrier=recovery.Update(Flight);if(carrier!=null) {debris.Add(carrier);Sound.Play(SoundCue.Separate);}
         }
         public void SetVolume(float delta) {Progress.volume=Mathf.Clamp01(Progress.volume+delta);AudioListener.volume=Progress.volume;SaveStore.Save(Progress);Toast("Громкость: "+Mathf.RoundToInt(Progress.volume*100)+"%");}
-        public void SetQuality(int index) {Progress.quality=index;QualitySettings.SetQualityLevel(Mathf.Clamp(index,0,QualitySettings.names.Length-1),true);SaveStore.Save(Progress);Toast("Настройки графики применены");}
+        public void SetAudioChannel(int channel,float value)
+        {
+            if(channel==0) Progress.interfaceVolume=value;
+            if(channel==1) Progress.engineVolume=value;
+            if(channel==2) Progress.environmentVolume=value;
+            Sound.ApplyVolumes(Progress);SaveStore.Save(Progress);
+        }
+        public void SetQuality(int index) {Progress.quality=Mathf.Clamp(index,0,2);QualitySettings.SetQualityLevel(Mathf.Min(QualitySettings.names.Length-1,Progress.quality*2+1),true);SaveStore.Save(Progress);Toast("Настройки графики применены");}
 
-        public void EnableVR() => StartCoroutine(StartXR());
+        public void EnableVR()
+        {
+            if(IsFlying) ReturnToWorkshop();
+            StartCoroutine(StartXR());
+        }
         IEnumerator StartXR()
         {
             if(vrEnabled) yield break;
@@ -247,12 +333,14 @@ namespace BRP
             Toast("Подключение OpenXR…");yield return manager.InitializeLoader();
             if(manager.activeLoader==null) {Toast("OpenXR runtime недоступен. Продолжайте в режиме ПК.");yield break;}
             manager.StartSubsystems();vrEnabled=true;mainCamera.gameObject.SetActive(false);
-            xrRig=Instantiate(Assets.xrRig);xrRig.transform.position=new Vector3(0,0,-2.4f);
+            if(xrRig==null) xrRig=Instantiate(Assets.xrRig);
+            xrRig.SetActive(true);xrRig.transform.position=new Vector3(0,0,-2.4f);
             var camera=xrRig.GetComponentInChildren<Camera>();if(camera!=null) mainCamera=camera;
+            mainCamera.cullingMask&=~(1<<29);ScaleAssembly(.55f);
             UI.canvas.renderMode=RenderMode.WorldSpace;UI.canvas.worldCamera=mainCamera;
             UI.root.sizeDelta=new Vector2(1920,1080);UI.root.position=new Vector3(-1.44f,2.8f,.5f);UI.root.localScale=Vector3.one*.0015f;
             var raycaster=UI.gameObject.AddComponent<UnityEngine.XR.Interaction.Toolkit.UI.TrackedDeviceGraphicRaycaster>();
-            var eventSystem=FindFirstObjectByType<EventSystem>();
+            var eventSystem=FindAnyObjectByType<EventSystem>();
             var old=eventSystem.GetComponent<InputSystemUIInputModule>();if(old!=null) Destroy(old);
             eventSystem.gameObject.AddComponent<UnityEngine.XR.Interaction.Toolkit.UI.XRUIInputModule>();
             Toast("VR включён. Используйте луч для панелей и захват для деталей.");
@@ -288,7 +376,11 @@ namespace BRP
                 }
                 if(keyboard.rKey.wasPressedThisFrame)
                 {
-                    dragging.transform.Rotate(Vector3.up,45,Space.World);dragging.Placement.rotation=dragging.transform.localRotation;
+                    var rotation=Quaternion.Euler(0,45,0);
+                    foreach(var item in dragGroup)
+                    {
+                        dragOffsets[item]=rotation*dragOffsets[item];item.transform.rotation=rotation*item.transform.rotation;
+                    }
                 }
                 if(Assembly.TryTarget(dragging,out var target)) DrawSnap(benchRoot.TransformPoint(target.position));else snapMarker.positionCount=0;
                 if(mouse.leftButton.wasReleasedThisFrame&&!mouse.leftButton.isPressed) EndDrag();
@@ -315,7 +407,7 @@ namespace BRP
         void UpdateFlight()
         {
             var k=Keyboard.current;
-            if(k!=null&&!UI.ModalOpen)
+            if(!vrEnabled&&k!=null&&!UI.ModalOpen)
             {
                 Flight.manualInput=new DVector3((k.sKey.isPressed?1:0)-(k.wKey.isPressed?1:0),(k.eKey.isPressed?1:0)-(k.qKey.isPressed?1:0),(k.dKey.isPressed?1:0)-(k.aKey.isPressed?1:0));
                 Flight.translationInput=new DVector3((k.lKey.isPressed?1:0)-(k.jKey.isPressed?1:0),(k.iKey.isPressed?1:0)-(k.kKey.isPressed?1:0),(k.oKey.isPressed?1:0)-(k.uKey.isPressed?1:0));
@@ -327,19 +419,19 @@ namespace BRP
                 if(k.bKey.wasPressedThisFrame) Flight.brakesDeployed=!Flight.brakesDeployed;
                 if(k.escapeKey.wasPressedThisFrame) UI.ShowFlightToolbar();
                 if(k.backspaceKey.wasPressedThisFrame) Abort();
-                if(k.tKey.wasPressedThisFrame)
-                {
-                    if(Flight.Altitude<160000||Flight.lastThrust>0||Target!=null) {TimeWarp=1;Toast("Ускорение доступно вне атмосферы, без тяги и цели рядом");}
-                    else {int[] speeds={1,2,5,10,50,100};TimeWarp=speeds[(Array.IndexOf(speeds,TimeWarp)+1)%speeds.Length];}
-                }
+                if(k.tKey.wasPressedThisFrame) CycleTimeWarp();
             }
             if(UI.ModalOpen) {Sound.SetEngine(0);return;}
-            if(Flight.lastThrust>0||Flight.Altitude<160000||Target!=null) TimeWarp=1;
+            int limit=Target!=null||Flight.Altitude<5000?5:Flight.Altitude<80000?10:100;
+            if(TimeWarp>limit) TimeWarp=limit;
+            var mouse=Mouse.current;
+            if(!vrEnabled&&mouse!=null&&!EventSystem.current.IsPointerOverGameObject()) presentation.OrbitCamera(mouse.rightButton.isPressed?mouse.delta.ReadValue():Vector2.zero,mouse.scroll.ReadValue().y);
             flightAccumulator+=Mathf.Min(Time.unscaledDeltaTime,.1f)*TimeWarp;
-            double step=TimeWarp>10?.5:.02;
+            double step=.02;
             int iterations=0;
             while(flightAccumulator>=step&&iterations++<300)
             {
+                UpdatePrograms(step);
                 Flight.Step(step);
                 foreach(var piece in debris) piece.Step(step);
                 Target?.Step(step);
@@ -349,16 +441,18 @@ namespace BRP
                 flightAccumulator-=(float)step;
             }
             presentation.Refresh(Flight,Target);Sound.SetEngine((float)(Flight.lastThrust/900000));
+            presentation.RefreshDebris(Flight,debris);
             uiTimer+=Time.unscaledDeltaTime;
             if(uiTimer>.15f)
             {
-                uiTimer=0;double separation=Target==null?0:(Flight.position-Target.position).Magnitude;
-                double relative=Target==null?0:(Flight.velocity-Target.velocity).Magnitude;
+                uiTimer=0;double separation=Target==null?0:(Flight.DockingPoint-Target.DockingPoint).Magnitude;
+                double relative=Target==null?0:(Flight.DockingVelocity-Target.DockingVelocity).Magnitude;
                 UI.UpdateFlight(Flight,separation,relative);
-                samples.Add(new FlightSample(Flight));
+                if(Flight.Powered&&Flight.Has(PartKind.FlightRecorder)) samples.Add(new FlightSample(Flight));
             }
             if((Flight.crashed||Flight.landed)&&!resultShown)
             {
+                if(Flight.crashed) {Sound.Play(SoundCue.Explosion);presentation.Burst(Flight.centerOfMass.Float);}
                 resultShown=true;ExportTelemetry();
                 UI.ShowResult(Flight.landed?"ПОСАДКА ВЫПОЛНЕНА":"ИСПЫТАНИЕ ЗАВЕРШЕНО",$"{Flight.lastEvent}\n\nВысота: {Flight.maxAltitude/1000:F2} км\nСкорость: {Flight.maxSpeed:F0} м/с\nТопливо: {Flight.totalFuelUsed:F0} кг\nМаксимальная перегрузка: {Flight.maxG:F1} g\n\nТелеметрия сохранена в папке данных игры.");
             }
@@ -366,8 +460,18 @@ namespace BRP
         public void Abort()
         {
             if(Flight==null||!Flight.Has(PartKind.EscapeTower)) {Toast("Система аварийного спасения не установлена");return;}
-            Flight.aborted=true;ReleasePayload();Flight.throttle=0;Sound.Play(SoundCue.Abort);Toast("Аварийное спасение включено");
+            if(Flight.Has(PartKind.Satellite)) ReleasePayload();
+            var carrier=Flight.SeparateCapsule(true);if(carrier!=null) debris.Add(carrier);
+            Ascent.active=false;recovery.active=true;Flight.throttle=0;Sound.Play(SoundCue.Abort);Toast("Аварийное спасение включено");
         }
+        public void CycleTimeWarp()
+        {
+            if(Flight==null||OnStand) return;
+            int limit=Target!=null||Flight.Altitude<5000?5:Flight.Altitude<80000?10:100;
+            int[] speeds={1,2,5,10,50,100};int next=speeds[(Array.IndexOf(speeds,TimeWarp)+1)%speeds.Length];
+            TimeWarp=next>limit?1:next;Toast("Скорость времени ×"+TimeWarp);
+        }
+        public void AdjustThrottle(int direction) {if(Flight!=null) Flight.throttle=direction==0?0:Math.Clamp(Flight.throttle+direction*.1,0,1);}
         bool HasTrialParts()
         {
             var kinds=Assembly.Blueprint.parts.Select(p=>Catalog.Find(p.partId).kind).ToArray();
@@ -386,7 +490,7 @@ namespace BRP
                 var f=Flight;
                 if(id==4) pass=OnStand&&f.poweredTime>=10&&f.throttle<.01&&!f.crashed;
                 if(id==5) pass=f.poweredTime>=10&&Has(PartKind.FuelLine)&&Has(PartKind.FuelPump)&&Has(PartKind.FuelValve)&&Has(PartKind.Pressurizer);
-                if(id==6) pass=f.maxAltitude>=1000&&f.Has(PartKind.FlightRecorder);
+                if(id==6) pass=f.maxAltitude>=1000&&f.recordedTime>0;
                 if(id==7) pass=f.Altitude>=5000&&f.Tilt<10&&f.stableTime>10;
                 if(id==8) pass=f.maxAltitude>=3000&&!f.parts.Any(p=>p.destroyed);
                 if(id==9) pass=f.stageEvent&&f.maxAltitude>=20000;

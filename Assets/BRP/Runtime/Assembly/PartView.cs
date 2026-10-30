@@ -16,6 +16,7 @@ namespace BRP
         public Rigidbody Body { get; private set; }
         Renderer[] renderers;
         MaterialPropertyBlock properties;
+        System.Collections.Generic.List<PartView> heldGroup;
         void Awake()
         {
             if(Definition!=null) Initialize(Owner,Definition,Placement);
@@ -64,18 +65,22 @@ namespace BRP
                 return;
             }
             LaboratoryGame.Instance?.Select(this);
+            heldGroup=Owner.DetachedGroup(this);
+            foreach(var child in heldGroup) if(child!=this) child.transform.SetParent(transform,true);
         }
         void OnRelease(SelectExitEventArgs args)
         {
             if(Attached) return;
+            if(heldGroup!=null) foreach(var child in heldGroup) if(child!=this) child.transform.SetParent(Owner.assemblyRoot,true);
             if(Owner.TryTarget(this,out var target))
             {
-                Owner.Attach(this,target);
+                Owner.Attach(this,target,heldGroup);
                 var haptic=args.interactorObject.transform.GetComponentInParent<HapticImpulsePlayer>();
                 if(haptic!=null) haptic.SendHapticImpulse(.45f,.065f);
                 LaboratoryGame.Instance?.Sound.Play(SoundCue.Snap);
             }
             else {Body.isKinematic=false;Body.useGravity=true;}
+            heldGroup=null;
         }
         public void SetPlacement()
         {
