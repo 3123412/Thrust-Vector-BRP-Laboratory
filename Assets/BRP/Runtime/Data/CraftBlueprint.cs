@@ -52,6 +52,8 @@ namespace BRP
                 if (!ids.Add(part.instanceId)) errors.Add("Повтор идентификатора детали");
                 if (catalog.Find(part.partId) == null) errors.Add("Неизвестная деталь: " + part.partId);
                 if (part.stage < 0 || part.stage > 5) errors.Add("Номер ступени должен быть от 1 до 6");
+                if (!float.IsFinite(part.position.x)||!float.IsFinite(part.position.y)||!float.IsFinite(part.position.z)||part.position.sqrMagnitude>10000) errors.Add("Некорректное положение детали");
+                if (!float.IsFinite(part.rotation.x)||!float.IsFinite(part.rotation.y)||!float.IsFinite(part.rotation.z)||!float.IsFinite(part.rotation.w)||Quaternion.Dot(part.rotation,part.rotation)<.5f) errors.Add("Некорректный поворот детали");
             }
             foreach (var part in parts)
             {
@@ -65,6 +67,7 @@ namespace BRP
                 }
             }
             if (parts.Count(p => string.IsNullOrEmpty(p.parentId)) > 1) errors.Add("Есть отсоединённые узлы");
+            if(parts.Where(p=>!string.IsNullOrEmpty(p.parentId)).GroupBy(p=>(p.parentId,p.port)).Any(group=>group.Count()>1)) errors.Add("Узел крепления занят несколькими деталями");
             return errors.Distinct().ToList();
         }
     }

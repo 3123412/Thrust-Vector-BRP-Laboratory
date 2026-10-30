@@ -10,7 +10,7 @@ namespace BRP
     {
         public PlacedPart placement;
         public PartDefinition definition;
-        public double fuel, oxidizer, energy, temperature = 288;
+        public double fuel, oxidizer, energy, thrust, temperature = 288;
         public bool active = true;
         public bool destroyed;
         public double Mass => destroyed ? 0 : definition.dryMass + fuel + oxidizer;
@@ -25,10 +25,10 @@ namespace BRP
         public DQuaternion orientation = DQuaternion.Identity;
         public InertiaTensor inertia;
         public double mass, elapsed, maxAltitude, maxSpeed, lastThrust, dynamicPressure, heatFlux, windSpeed;
-        public double maxG, totalImpulse, totalFuelUsed, poweredTime, telemetryTime, stableTime;
+        public double maxG, totalImpulse, totalFuelUsed, poweredTime, telemetryTime, stableTime, recordedTime;
         public double throttle = 1;
         public int stage;
-        public bool launched, landed, crashed, chuteDeployed, brakesDeployed, valveOpen = true, stageEvent, payloadReleased, aborted, docked;
+        public bool launched, landed, crashed, chuteDeployed, mainChuteDeployed, brakesDeployed, valveOpen = true, stageEvent, payloadReleased, aborted, docked;
         public GuidanceMode guidance = GuidanceMode.Hold;
         public DVector3 manualInput;
         public DVector3 translationInput;
@@ -47,6 +47,10 @@ namespace BRP
         public bool Powered => Energy > 0;
         public bool Telemetry => Has(PartKind.Antenna) && Has(PartKind.Transmitter) && Powered;
         public double Tilt => Math.Acos(Math.Clamp(DVector3.Dot(orientation.Rotate(new DVector3(0,1,0)),position.Normalized),-1,1))*180/Math.PI;
+        public PartState DockingPort => parts.FirstOrDefault(p=>!p.destroyed&&p.definition.kind==PartKind.DockingPort);
+        public DVector3 DockingAxis => DockingPort==null?orientation.Rotate(new DVector3(0,1,0)):orientation.Rotate(new DVector3(DockingPort.placement.rotation*Vector3.up));
+        public DVector3 DockingPoint => DockingPort==null?position:position+orientation.Rotate(new DVector3(DockingPort.placement.position+DockingPort.placement.rotation*Vector3.up*DockingPort.definition.height)-centerOfMass);
+        public DVector3 DockingVelocity => velocity+orientation.Rotate(DVector3.Cross(angularVelocity,orientation.Inverse.Rotate(DockingPoint-position)));
 
         public FlightBody(CraftBlueprint craft, PartCatalog catalog)
         {
@@ -90,7 +94,7 @@ namespace BRP
             }
         }
 
-        public double AvailableThrust => parts.Where(p=>!p.destroyed && p.placement.stage==stage).Sum(p=>(double)p.definition.thrust);
+        public double AvailableThrust => parts.Where(p=>!p.destroyed&&p.active&&p.placement.stage==stage&&(p.definition.kind!=PartKind.EscapeTower||aborted)).Sum(p=>(double)p.definition.thrust);
         public double TWR => AvailableThrust / Math.Max(1,mass*OrbitalMechanics.StandardGravity);
         public double DeltaV
         {
@@ -132,6 +136,7 @@ namespace BRP
                 if(p.definition.kind==PartKind.FuelCell && bus && Fuel>0)
                 {
                     double used=Drain(dt*.01,q=>q.fuel,(q,v)=>q.fuel=v,q=>q.definition.kind==PartKind.ServiceTank);
+                    totalFuelUsed+=used;
                     if(used>0) generation+=p.definition.electricGeneration;
                 }
             }
@@ -152,6 +157,7 @@ namespace BRP
             var localForce=new DVector3();
             var localTorque=new DVector3();
             lastThrust=0;
+            foreach(var part in parts) part.thrust=0;
             foreach(var p in parts.Where(p=>!p.destroyed&&p.active&&p.definition.thrust>0&&p.placement.stage==stage))
             {
                 var d=p.definition;
@@ -171,7 +177,7 @@ namespace BRP
                 else
                 {
                     bool crossfeed=Has(PartKind.FuelLine)&&Has(PartKind.FuelPump)&&Powered;
-                    bool Eligible(PartState q)=>q.definition.kind!=PartKind.SolidBooster&&q.definition.kind!=PartKind.EscapeTower&&(q.placement.stage==stage||crossfeed);
+                    bool Eligible(PartState q)=>q.definition.kind!=PartKind.SolidBooster&&q.definition.kind!=PartKind.EscapeTower&&q.definition.kind!=PartKind.ServiceTank&&(q.placement.stage==stage||crossfeed&&q.placement.stage<stage);
                     double f=parts.Where(q=>!q.destroyed&&Eligible(q)).Sum(q=>q.fuel);
                     double o=parts.Where(q=>!q.destroyed&&Eligible(q)).Sum(q=>q.oxidizer);
                     double fraction=Math.Min(1,Math.Min(f/(needed/3.44),o/(needed*2.44/3.44)));
@@ -182,6 +188,7 @@ namespace BRP
                     thrust*=fraction;
                 }
                 lastThrust+=thrust;
+                p.thrust=thrust;
                 var force=new DVector3(p.placement.rotation*Vector3.up)*thrust;
                 localForce+=force;
                 localTorque+=DVector3.Cross(new DVector3(p.placement.position)-centerOfMass,force);
@@ -189,6 +196,7 @@ namespace BRP
             if(lastThrust>0) poweredTime+=dt;
             totalImpulse+=lastThrust*dt;
             if(Telemetry) telemetryTime+=dt;
+            if(Has(PartKind.FlightRecorder)&&Powered) recordedTime+=dt;
             if(Tilt<10) stableTime+=dt;
             RecalculateMass();
             double altitude=Math.Max(0,Altitude);
@@ -201,9 +209,10 @@ namespace BRP
             double maxRadius=parts.Where(p=>!p.destroyed).Select(p=>(double)p.definition.radius).DefaultIfEmpty(.3).Max();
             double frontalArea=Math.PI*maxRadius*maxRadius;
             bool faired=Has(PartKind.Fairing);
-            double dragArea=frontalArea*(faired?.22:.55);
+            double dragArea=frontalArea*(faired?.22:Has(PartKind.Capsule)?1.1:.55);
+            if(Has(PartKind.CargoBay)) dragArea*=.85;
             if(brakesDeployed) dragArea+=parts.Where(p=>!p.destroyed&&p.definition.kind==PartKind.AirBrake).Count()*3;
-            if(chuteDeployed) dragArea+=parts.Where(p=>!p.destroyed).Sum(p=>(double)p.definition.parachuteArea)*1.5;
+            if(chuteDeployed) dragArea+=parts.Where(p=>!p.destroyed&&(mainChuteDeployed||p.definition.kind==PartKind.DrogueParachute)).Sum(p=>(double)p.definition.parachuteArea)*1.5;
             var drag=airVelocity.Normalized*(-dynamicPressure*dragArea);
             foreach(var p in parts.Where(p=>!p.destroyed&&p.definition.liftArea>0))
             {
@@ -213,29 +222,33 @@ namespace BRP
                 localTorque+=DVector3.Cross(new DVector3(p.placement.position)-centerOfMass,aero);
             }
             var command=manualInput;
-            if(guidance!=GuidanceMode.Manual && Has(PartKind.FlightComputer)&&Powered)
+            bool automatic=guidance!=GuidanceMode.Manual&&Has(PartKind.FlightComputer)&&Powered;
+            if(automatic)
             {
                 var up=position.Normalized;
-                var desired=guidance==GuidanceMode.Prograde?velocity.Normalized:guidance==GuidanceMode.Retrograde?-velocity.Normalized:guidance==GuidanceMode.Normal?DVector3.Cross(position,velocity).Normalized:guidance==GuidanceMode.Target?targetDirection.Normalized:up;
+                var desired=guidance==GuidanceMode.Prograde?velocity.Normalized:guidance==GuidanceMode.Retrograde?-velocity.Normalized:guidance==GuidanceMode.Normal?DVector3.Cross(position,velocity).Normalized:guidance==GuidanceMode.Target&&targetDirection.Magnitude>0?targetDirection.Normalized:up;
                 var desiredLocal=orientation.Inverse.Rotate(desired);
-                command=DVector3.Cross(new DVector3(0,1,0),desiredLocal)*4-angularVelocity*2;
-                command=new DVector3(Math.Clamp(command.x,-1,1),Math.Clamp(command.y,-1,1),Math.Clamp(command.z,-1,1));
+                command=DVector3.Cross(new DVector3(0,1,0),desiredLocal)*6-angularVelocity*4;
             }
             double authority=0;
             foreach(var p in parts.Where(p=>!p.destroyed))
             {
                 var k=p.definition.kind;
                 if(k==PartKind.Gimbal && lastThrust>0&&Powered) authority+=p.definition.controlTorque;
+                if(k==PartKind.VernierEngine&&p.thrust>0) authority+=p.definition.controlTorque;
                 if(k==PartKind.ReactionWheel&&Powered) authority+=p.definition.controlTorque;
                 if(k==PartKind.ControlFin) authority+=p.definition.controlTorque*Math.Min(1,dynamicPressure/5000);
                 if(k==PartKind.RcsBlock&&Has(PartKind.ServiceTank)&&Fuel>0)
                 {
-                    double used=Drain(dt*.03*command.Magnitude,q=>q.fuel,(q,v)=>q.fuel=v,q=>q.definition.kind==PartKind.ServiceTank);
+                    double used=Drain(dt*.03*Math.Min(1,command.Magnitude),q=>q.fuel,(q,v)=>q.fuel=v,q=>q.definition.kind==PartKind.ServiceTank);
+                    totalFuelUsed+=used;
                     if(used>0) authority+=p.definition.controlTorque;
                 }
             }
-            localTorque+=command*authority;
-            if(Has(PartKind.Gyroscope)&&Powered) localTorque-=angularVelocity*(authority*.4);
+            var steering=automatic?inertia.Multiply(command)-localTorque+DVector3.Cross(angularVelocity,inertia.Multiply(angularVelocity)):command*authority;
+            if(!automatic&&Has(PartKind.Gyroscope)&&Powered) steering-=inertia.Multiply(angularVelocity)*3;
+            if(steering.Magnitude>authority) steering=steering.Normalized*authority;
+            localTorque+=steering;
             angularVelocity+=inertia.Solve(localTorque-DVector3.Cross(angularVelocity,inertia.Multiply(angularVelocity)))*dt;
             if(angularVelocity.Magnitude>15) angularVelocity=angularVelocity.Normalized*15;
             orientation.Integrate(angularVelocity,dt);
@@ -243,6 +256,7 @@ namespace BRP
             if(translationInput.Magnitude>0&&Has(PartKind.RcsBlock)&&Has(PartKind.ServiceTank))
             {
                 double used=Drain(dt*.1*translationInput.Magnitude,q=>q.fuel,(q,v)=>q.fuel=v,q=>q.definition.kind==PartKind.ServiceTank);
+                totalFuelUsed+=used;
                 if(used>0) external+=orientation.Rotate(translationInput)*1200;
             }
             maxG=Math.Max(maxG,external.Magnitude/Math.Max(1,mass)/OrbitalMechanics.StandardGravity);
@@ -250,7 +264,7 @@ namespace BRP
             OrbitalMechanics.Integrate(ref position,ref velocity,dt,(r,v)=>OrbitalMechanics.Gravity(r)+constantAcceleration);
             heatFlux=1.83e-4*Math.Sqrt(Math.Max(0,density)/Math.Max(.1,maxRadius))*speed*speed*speed;
             double cooling=parts.Where(p=>!p.destroyed).Sum(p=>(double)p.definition.coolingArea);
-            double protection=Has(PartKind.HeatShield)?.025:Has(PartKind.Insulation)?.3:1;
+            double protection=Has(PartKind.HeatShield)?.025:Has(PartKind.Insulation)?.3:Has(PartKind.CargoBay)?.45:1;
             foreach(var p in parts.Where(p=>!p.destroyed).ToArray())
             {
                 double absorbed=heatFlux*Math.PI*p.definition.radius*p.definition.radius*(p.definition.kind==PartKind.HeatShield?1:protection)*.08;
@@ -268,10 +282,15 @@ namespace BRP
                 chuteDeployed=false;lastEvent="Парашют сорван потоком";
             }
             maxAltitude=Math.Max(maxAltitude,Altitude);maxSpeed=Math.Max(maxSpeed,speed);
+            if(maxAltitude<5&&Altitude<2&&!aborted)
+            {
+                var up=position.Normalized;position=up*(OrbitalMechanics.Radius+2);
+                double vertical=DVector3.Dot(SurfaceVelocity,up);if(vertical<0) velocity-=up*vertical;
+            }
             if(Altitude<0)
             {
                 double landingSpeed=SurfaceVelocity.Magnitude;
-                double tolerance=Has(PartKind.LandingLeg)?12:8;
+                double tolerance=parts.Count(p=>!p.destroyed&&p.definition.kind==PartKind.LandingLeg)>=3?12:8;
                 crashed=landingSpeed>tolerance;landed=!crashed;
                 position=position.Normalized*OrbitalMechanics.Radius;
                 velocity=OrbitalMechanics.AtmosphereVelocity(position);
@@ -291,16 +310,18 @@ namespace BRP
             var lower=parts.Except(upper).ToList();
             if(upper.Count==0||lower.Count==0) return null;
             cut.active=false;
-            var retained=payload?lower:upper;
-            var released=payload?upper:lower;
+            bool radial=cut.definition.kind==PartKind.RadialDecoupler;
+            var retained=payload||radial?lower:upper;
+            var released=payload||radial?upper:lower;
             var detached=new FlightBody(released,this);
             var previousCenter=centerOfMass;
             parts.Clear();parts.AddRange(retained);RecalculateMass();
             var shift=orientation.Rotate(centerOfMass-previousCenter);
             position+=shift;velocity+=orientation.Rotate(DVector3.Cross(angularVelocity,centerOfMass-previousCenter));
-            var impulse=orientation.Rotate(new DVector3(0,1,0))*1500;
+            var direction=radial?new DVector3(-cut.placement.position.x,0,-cut.placement.position.z).Normalized:new DVector3(0,payload?-1:1,0);
+            var impulse=orientation.Rotate(direction)*1500;
             velocity+=impulse/mass;detached.velocity-=impulse/detached.mass;
-            if(!payload) stage=Math.Min(5,stage+1);
+            if(!payload&&!radial) stage=Math.Min(5,stage+1);
             else detached.throttle=0;
             stageEvent=true;payloadReleased|=payload;
             lastEvent=payload?"Полезная нагрузка отделена":"Ступень отделена";
@@ -312,7 +333,41 @@ namespace BRP
             if(!Has(PartKind.MainParachute)&&!Has(PartKind.DrogueParachute)) {lastEvent="Нет парашютной системы";return false;}
             double safeSpeed=Has(PartKind.DrogueParachute)?350:180;
             if(Altitude>5000||SurfaceVelocity.Magnitude>safeSpeed) {lastEvent="Рано раскрывать: ниже 5 км и медленнее "+safeSpeed+" м/с";return false;}
-            chuteDeployed=true;lastEvent="Парашюты раскрыты";return true;
+            chuteDeployed=true;
+            mainChuteDeployed=SurfaceVelocity.Magnitude<=180&&Has(PartKind.MainParachute);
+            lastEvent=mainChuteDeployed?"Основной парашют раскрыт":"Тормозной парашют раскрыт";return true;
+        }
+
+        public FlightBody SeparateCapsule(bool emergency=false)
+        {
+            var capsule=parts.FirstOrDefault(p=>!p.destroyed&&p.definition.kind==PartKind.Capsule);
+            if(capsule==null) {lastEvent="Возвращаемая капсула не установлена";return null;}
+            var shield=parts.FirstOrDefault(p=>p.placement.instanceId==capsule.placement.parentId&&p.definition.kind==PartKind.HeatShield);
+            var root=shield??capsule;
+            var ids=new HashSet<string>{root.placement.instanceId};
+            bool changed;
+            do {changed=false;foreach(var part in parts) if(ids.Contains(part.placement.parentId??"")) changed|=ids.Add(part.placement.instanceId);} while(changed);
+            var released=parts.Where(p=>!ids.Contains(p.placement.instanceId)).ToList();
+            if(released.Count==0) {lastEvent="Капсула уже отделена";return null;}
+            var carrier=new FlightBody(released,this) {throttle=0};
+            var previousCenter=centerOfMass;
+            parts.RemoveAll(p=>!ids.Contains(p.placement.instanceId));RecalculateMass();
+            var offset=centerOfMass-previousCenter;
+            position+=orientation.Rotate(offset);velocity+=orientation.Rotate(DVector3.Cross(angularVelocity,offset));
+            var impulse=orientation.Rotate(new DVector3(0,1,0))*500;
+            velocity+=impulse/mass;carrier.velocity-=impulse/carrier.mass;
+            root.placement.parentId=null;throttle=0;aborted|=emergency;stageEvent=true;
+            guidance=GuidanceMode.Retrograde;
+            lastEvent=emergency?"Аварийное отделение капсулы":"Капсула отделена для возвращения";
+            return carrier;
+        }
+
+        public bool CanDock(FlightBody other,out double distance,out double speed,out double angle)
+        {
+            distance=(DockingPoint-other.DockingPoint).Magnitude;
+            speed=(DockingVelocity-other.DockingVelocity).Magnitude;
+            angle=Math.Acos(Math.Clamp(DVector3.Dot(DockingAxis,-other.DockingAxis),-1,1))*180/Math.PI;
+            return DockingPort!=null&&other.DockingPort!=null&&distance<=.6&&speed<=.2&&angle<=5;
         }
 
         public void Dock(FlightBody other)
