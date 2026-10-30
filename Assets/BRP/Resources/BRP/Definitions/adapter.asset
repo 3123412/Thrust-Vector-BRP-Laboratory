@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: caaab10608e96094eaf2fd9acbe2a56e, type: 3}
+  m_Name: adapter
+  m_EditorClassIdentifier: Assembly-CSharp::BRP.PartDefinition
+  id: adapter
+  title: "\u041F\u0435\u0440\u0435\u0445\u043E\u0434\u043D\u043E\u0439 \u043E\u0442\u0441\u0435\u043A"
+  description: "\u0421\u043E\u0435\u0434\u0438\u043D\u044F\u0435\u0442 \u043A\u043E\u0440\u043F\u0443\u0441\u0430 \u0440\u0430\u0437\u043D\u044B\u0445 \u0434\u0438\u0430\u043C\u0435\u0442\u0440\u043E\u0432."
+  kind: 2
+  category: 0
+  mount: 0
+  model: {fileID: 919132149155446097, guid: 4e8ae314fa755144f8228126592191da, type: 3}
+  thumbnail: {fileID: -6220070411472268574, guid: 7626d78feb81ca745be868def24ead74, type: 3}
+  dryMass: 160
+  height: 0.42
+  radius: 0.45
+  fuelCapacity: 0
+  oxidizerCapacity: 0
+  thrust: 0
+  specificImpulse: 300
+  dragCoefficient: 0.3
+  liftArea: 0
+  electricCapacity: 0
+  electricGeneration: 0
+  electricConsumption: 0
+  controlTorque: 0
+  temperatureLimit: 900
+  strength: 350000
+  heatCapacity: 800
+  coolingArea: 0
+  parachuteArea: 0
+  price: 580
+  surface: 0

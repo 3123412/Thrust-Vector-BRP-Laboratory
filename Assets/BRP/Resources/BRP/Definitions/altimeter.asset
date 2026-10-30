@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: caaab10608e96094eaf2fd9acbe2a56e, type: 3}
+  m_Name: altimeter
+  m_EditorClassIdentifier: Assembly-CSharp::BRP.PartDefinition
+  id: altimeter
+  title: "\u0412\u044B\u0441\u043E\u0442\u043E\u043C\u0435\u0440"
+  description: "\u0418\u0437\u043C\u0435\u0440\u044F\u0435\u0442 \u0432\u044B\u0441\u043E\u0442\u0443 \u043D\u0430\u0434 \u043F\u043E\u0432\u0435\u0440\u0445\u043D\u043E\u0441\u0442\u044C\u044E \u0438 \u0441\u043A\u043E\u0440\u043E\u0441\u0442\u044C \u0441\u043D\u0438\u0436\u0435\u043D\u0438\u044F."
+  kind: 38
+  category: 3
+  mount: 1
+  model: {fileID: 919132149155446097, guid: 7494ba51ed879fc42a4735299e6d1800, type: 3}
+  thumbnail: {fileID: -9220726050408342229, guid: d44cab018958b4d40a438d004833ffc0, type: 3}
+  dryMass: 4
+  height: 0.18
+  radius: 0.45
+  fuelCapacity: 0
+  oxidizerCapacity: 0
+  thrust: 0
+  specificImpulse: 300
+  dragCoefficient: 0.3
+  liftArea: 0
+  electricCapacity: 0
+  electricGeneration: 0
+  electricConsumption: 1
+  controlTorque: 0
+  temperatureLimit: 900
+  strength: 350000
+  heatCapacity: 800
+  coolingArea: 0
+  parachuteArea: 0
+  price: 112
+  surface: 1

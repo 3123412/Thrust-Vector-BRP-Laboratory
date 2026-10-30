@@ -19,14 +19,15 @@ Shader "BRP/Exhaust"
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_instancing
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            struct Attributes { float4 positionOS:POSITION;float2 uv:TEXCOORD0;half4 color:COLOR; };
-            struct Varyings { float4 positionCS:SV_POSITION;float2 uv:TEXCOORD0;half4 color:COLOR; };
+            struct Attributes { float4 positionOS:POSITION;float2 uv:TEXCOORD0;half4 color:COLOR; UNITY_VERTEX_INPUT_INSTANCE_ID };
+            struct Varyings { float4 positionCS:SV_POSITION;float2 uv:TEXCOORD0;half4 color:COLOR; UNITY_VERTEX_OUTPUT_STEREO };
             half4 _BaseColor;
             float _Softness,_Turbulence;
             Varyings vert(Attributes v)
             {
-                Varyings o;o.positionCS=TransformObjectToHClip(v.positionOS.xyz);o.uv=v.uv;o.color=v.color;return o;
+                Varyings o;UNITY_SETUP_INSTANCE_ID(v);UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);o.positionCS=TransformObjectToHClip(v.positionOS.xyz);o.uv=v.uv;o.color=v.color;return o;
             }
             float hash(float2 p) {return frac(sin(dot(p,float2(127.1,311.7)))*43758.5453);}
             float noise(float2 p)
@@ -36,6 +37,7 @@ Shader "BRP/Exhaust"
             }
             half4 frag(Varyings i):SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 float2 p=i.uv*2-1;
                 float turbulence=noise(i.uv*6+float2(_Time.y*.8,-_Time.y*2));
                 float radius=length(p)+_Turbulence*(turbulence-.5);

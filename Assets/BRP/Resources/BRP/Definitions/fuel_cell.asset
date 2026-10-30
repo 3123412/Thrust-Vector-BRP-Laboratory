@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: caaab10608e96094eaf2fd9acbe2a56e, type: 3}
+  m_Name: fuel_cell
+  m_EditorClassIdentifier: Assembly-CSharp::BRP.PartDefinition
+  id: fuel_cell
+  title: "\u0422\u043E\u043F\u043B\u0438\u0432\u043D\u044B\u0439 \u044D\u043B\u0435\u043C\u0435\u043D\u0442"
+  description: "\u041F\u0440\u0435\u043E\u0431\u0440\u0430\u0437\u0443\u0435\u0442 \u0441\u043B\u0443\u0436\u0435\u0431\u043D\u043E\u0435 \u0442\u043E\u043F\u043B\u0438\u0432\u043E \u0432 \u044D\u043B\u0435\u043A\u0442\u0440\u0438\u0447\u0435\u0441\u0442\u0432\u043E."
+  kind: 32
+  category: 3
+  mount: 1
+  model: {fileID: 919132149155446097, guid: ecd32905bbf451748b3b5d416c0e840e, type: 3}
+  thumbnail: {fileID: 8958040669189068070, guid: 9908329e5bf8b9242ad70ee9b9c79188, type: 3}
+  dryMass: 35
+  height: 0.35
+  radius: 0.45
+  fuelCapacity: 0
+  oxidizerCapacity: 0
+  thrust: 0
+  specificImpulse: 300
+  dragCoefficient: 0.3
+  liftArea: 0
+  electricCapacity: 0
+  electricGeneration: 150
+  electricConsumption: 0
+  controlTorque: 0
+  temperatureLimit: 900
+  strength: 350000
+  heatCapacity: 800
+  coolingArea: 0
+  parachuteArea: 0
+  price: 205
+  surface: 1

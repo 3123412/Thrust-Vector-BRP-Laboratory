@@ -13,15 +13,18 @@ Shader "BRP/Earth"
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_instancing
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            struct Attributes { float4 positionOS:POSITION; float3 normalOS:NORMAL; float2 uv:TEXCOORD0; };
-            struct Varyings { float4 positionCS:SV_POSITION; float3 normalWS:TEXCOORD0; float3 positionWS:TEXCOORD1; float2 uv:TEXCOORD2; };
+            struct Attributes { float4 positionOS:POSITION; float3 normalOS:NORMAL; float2 uv:TEXCOORD0; UNITY_VERTEX_INPUT_INSTANCE_ID };
+            struct Varyings { float4 positionCS:SV_POSITION; float3 normalWS:TEXCOORD0; float3 positionWS:TEXCOORD1; float2 uv:TEXCOORD2; UNITY_VERTEX_OUTPUT_STEREO };
             float4 _BaseColor;
             TEXTURE2D(_MainTex);
             SAMPLER(sampler_MainTex);
             Varyings vert(Attributes input)
             {
                 Varyings o;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
                 o.positionWS=TransformObjectToWorld(input.positionOS.xyz);
                 o.positionCS=TransformWorldToHClip(o.positionWS);
                 o.normalWS=TransformObjectToWorldNormal(input.normalOS);
@@ -36,6 +39,7 @@ Shader "BRP/Earth"
             }
             half4 frag(Varyings i):SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 float3 n=normalize(i.normalWS);
                 float2 uv=i.uv*float2(12,6);
                 float terrain=noise(uv)+noise(uv*2.1)*.35+noise(uv*5.3)*.12;

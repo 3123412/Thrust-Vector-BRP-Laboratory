@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: caaab10608e96094eaf2fd9acbe2a56e, type: 3}
+  m_Name: stack_decoupler
+  m_EditorClassIdentifier: Assembly-CSharp::BRP.PartDefinition
+  id: stack_decoupler
+  title: "\u041C\u0435\u0436\u0441\u0442\u0443\u043F\u0435\u043D\u0447\u0430\u0442\u044B\u0439 \u0440\u0430\u0437\u0434\u0435\u043B\u0438\u0442\u0435\u043B\u044C"
+  description: "\u0420\u0430\u0437\u0434\u0435\u043B\u044F\u0435\u0442 \u0441\u0442\u0443\u043F\u0435\u043D\u0438 \u0441 \u043D\u0435\u0431\u043E\u043B\u044C\u0448\u0438\u043C \u0438\u043C\u043F\u0443\u043B\u044C\u0441\u043E\u043C."
+  kind: 15
+  category: 0
+  mount: 0
+  model: {fileID: 919132149155446097, guid: 61bd93814ea68c54f866557c88600459, type: 3}
+  thumbnail: {fileID: -4859208874314298747, guid: 04ebca0c3a86431468dd1ebe7b49826b, type: 3}
+  dryMass: 65
+  height: 0.18
+  radius: 0.45
+  fuelCapacity: 0
+  oxidizerCapacity: 0
+  thrust: 0
+  specificImpulse: 300
+  dragCoefficient: 0.3
+  liftArea: 0
+  electricCapacity: 0
+  electricGeneration: 0
+  electricConsumption: 0
+  controlTorque: 0
+  temperatureLimit: 900
+  strength: 350000
+  heatCapacity: 800
+  coolingArea: 0
+  parachuteArea: 0
+  price: 295
+  surface: 0

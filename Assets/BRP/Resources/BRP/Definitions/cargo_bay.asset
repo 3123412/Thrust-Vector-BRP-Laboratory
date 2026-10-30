@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: caaab10608e96094eaf2fd9acbe2a56e, type: 3}
+  m_Name: cargo_bay
+  m_EditorClassIdentifier: Assembly-CSharp::BRP.PartDefinition
+  id: cargo_bay
+  title: "\u0413\u0440\u0443\u0437\u043E\u0432\u043E\u0439 \u043E\u0442\u0441\u0435\u043A"
+  description: "\u0423\u043A\u0440\u044B\u0432\u0430\u0435\u0442 \u043F\u043E\u043B\u0435\u0437\u043D\u0443\u044E \u043D\u0430\u0433\u0440\u0443\u0437\u043A\u0443 \u0432\u043E \u0432\u0440\u0435\u043C\u044F \u043F\u043E\u0434\u044A\u0451\u043C\u0430."
+  kind: 43
+  category: 4
+  mount: 0
+  model: {fileID: 919132149155446097, guid: 568068bb6164e734fad619a65b9bec27, type: 3}
+  thumbnail: {fileID: 8521150061494097954, guid: dcd74d88662e39f448419aa1f342797c, type: 3}
+  dryMass: 150
+  height: 0.9
+  radius: 0.45
+  fuelCapacity: 0
+  oxidizerCapacity: 0
+  thrust: 0
+  specificImpulse: 300
+  dragCoefficient: 0.3
+  liftArea: 0
+  electricCapacity: 0
+  electricGeneration: 0
+  electricConsumption: 0
+  controlTorque: 0
+  temperatureLimit: 900
+  strength: 350000
+  heatCapacity: 800
+  coolingArea: 0
+  parachuteArea: 0
+  price: 550
+  surface: 0
