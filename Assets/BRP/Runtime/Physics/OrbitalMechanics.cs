@@ -37,6 +37,27 @@ namespace BRP
 
         public static DVector3 AtmosphereVelocity(DVector3 position) => DVector3.Cross(new DVector3(0, 0, RotationRate), position);
 
+        public static double AirTemperature(double altitude)
+        {
+            altitude=Math.Max(0,altitude);
+            if(altitude<11000) return 288.15-.0065*altitude;
+            if(altitude<20000) return 216.65;
+            if(altitude<32000) return 216.65+.001*(altitude-20000);
+            if(altitude<47000) return 228.65+.0028*(altitude-32000);
+            if(altitude<51000) return 270.65;
+            return Math.Max(186.95,270.65-.0028*(altitude-51000));
+        }
+
+        public static double SpeedOfSound(double altitude) => Math.Sqrt(1.4*287.05*AirTemperature(altitude));
+
+        public static double WaveDragMultiplier(double mach)
+        {
+            mach=Math.Max(0,mach);
+            double rise=Math.Exp(-Math.Pow((mach-1.05)/.24,2));
+            double supersonic=mach>1?.24*(1-Math.Exp(-(mach-1)*4))/Math.Sqrt(mach):0;
+            return 1+.48*rise+supersonic;
+        }
+
         public static OrbitElements Elements(DVector3 position, DVector3 velocity)
         {
             double r = position.Magnitude;

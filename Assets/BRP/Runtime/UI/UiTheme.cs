@@ -9,10 +9,10 @@ namespace BRP
     public static class UiTheme
     {
         public static readonly Color Ink=new Color(.027f,.037f,.043f,.97f);
-        public static readonly Color PanelColor=new Color(.035f,.045f,.05f,1);
+        public static readonly Color PanelColor=new Color(.047f,.065f,.078f,1);
         public static readonly Color Line=new Color(.25f,.31f,.32f,.5f);
         public static readonly Color TextColor=new Color(.91f,.91f,.86f);
-        public static readonly Color Muted=new Color(.54f,.62f,.63f);
+        public static readonly Color Muted=new Color(.68f,.74f,.76f);
         public static readonly Color Orange=new Color(.96f,.37f,.13f);
         public static readonly Color Cyan=new Color(.45f,.79f,.75f);
         public static TMP_FontAsset Font;
@@ -69,7 +69,7 @@ namespace BRP
         {
             var root=Rect(name,parent,x,y,w,h);scroll=root.gameObject.AddComponent<ScrollRect>();
             var viewport=Panel("Viewport",root,0,0,w,h,new Color(.04f,.07f,.09f,.05f));
-            var mask=viewport.gameObject.AddComponent<Mask>();mask.showMaskGraphic=false;
+            viewport.gameObject.AddComponent<RectMask2D>();
             var content=Rect("Content",viewport,0,0,w-10,0);
             scroll.viewport=viewport;scroll.content=content;scroll.horizontal=false;
             scroll.movementType=ScrollRect.MovementType.Clamped;scroll.scrollSensitivity=28;

@@ -26,6 +26,7 @@ namespace BRP
                 case "help":g.UI.ShowHelp();break;
                 case "settings":g.UI.ShowSettings();break;
                 case "home":g.UI.ShowHome();break;
+                case "quit":SaveStore.Save(g.Progress);Application.Quit();break;
                 case "category":g.UI.PopulateCatalog((PartCategory)argument);break;
                 case "detach":g.DetachSelected();break;
                 case "delete":g.DeleteSelected();break;
@@ -61,7 +62,8 @@ namespace BRP
         public void OnPointerDown(PointerEventData eventData) {LaboratoryGame.Instance?.Sound.Play(SoundCue.Click);}
         void Update()
         {
-            if(accent!=null) {var c=accent.color;c.a=Mathf.Lerp(c.a,target,Time.unscaledDeltaTime*14);accent.color=c;}
+            if(accent==null||Mathf.Approximately(accent.color.a,target)) return;
+            var color=accent.color;color.a=Mathf.MoveTowards(color.a,target,Time.unscaledDeltaTime*5);accent.color=color;
         }
     }
 }

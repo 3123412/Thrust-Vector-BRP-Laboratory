@@ -28,9 +28,12 @@ namespace BRP.Editor
             var catalog=Resources.Load<PartCatalog>("BRP/Catalog");
             var assets=Resources.Load<LabSceneAssets>("BRP/SceneAssets");
             ConfigureMaterials();
+            ModelOptimization.Build(catalog);
             assets.hangar=AssetDatabase.LoadAssetAtPath<GameObject>(Art+"/Models/studio_hangar.fbx");
             assets.workbench=AssetDatabase.LoadAssetAtPath<GameObject>(Art+"/Models/studio_bench.fbx");
             assets.terrain=AssetDatabase.LoadAssetAtPath<GameObject>(Art+"/Models/launch_terrain.fbx");
+            var spaceport=AssetDatabase.LoadAssetAtPath<GameObject>(Art+"/Models/spaceport.fbx");
+            if(spaceport!=null) assets.launchpad=spaceport;
             assets.flameMaterial=ParticleMaterial("ExhaustFlame",new Color(2.6f,1.5f,.55f),true,1.2f,.2f);
             assets.smokeMaterial=ParticleMaterial("ExhaustSmoke",new Color(.32f,.37f,.4f,.5f),false,.9f,.5f);
             assets.sparkMaterial=ParticleMaterial("HotSparks",new Color(3,1.4f,.4f),true,2,0);
@@ -46,14 +49,14 @@ namespace BRP.Editor
             catalog=AssetDatabase.LoadAssetAtPath<PartCatalog>("Assets/BRP/Resources/BRP/Catalog.asset");
             assets=AssetDatabase.LoadAssetAtPath<LabSceneAssets>("Assets/BRP/Resources/BRP/SceneAssets.asset");
             var lighting=new GameObject("Lighting").transform;
-            var sun=Light("MoonKey",lighting,LightType.Directional,new Color(.72f,.83f,1),1.25f,0);
+            var sun=Light("Daylight",lighting,LightType.Directional,new Color(1,.94f,.83f),1.8f,0);
             sun.transform.rotation=Quaternion.Euler(30,-35,0);sun.shadows=LightShadows.Soft;
-            Point("OverheadSoftbox",lighting,new Vector3(-1,5,-1),new Color(.68f,.82f,1),50,10);
-            Point("AmberRim",lighting,new Vector3(3,3,2),new Color(1,.52f,.23f),40,8);
-            Point("BenchFill",lighting,new Vector3(-3,2,-3),new Color(.5f,.75f,.84f),25,8);
-            Point("RoomBounce",lighting,new Vector3(0,4,5),new Color(.45f,.6f,.68f),50,18);
+            Point("OverheadSoftbox",lighting,new Vector3(-1,5,-1),new Color(.8f,.88f,1),18,14);
+            Point("AmberRim",lighting,new Vector3(3,3,2),new Color(1,.75f,.46f),12,10);
+            Point("BenchFill",lighting,new Vector3(-3,2,-3),new Color(.7f,.85f,.9f),10,10);
+            Point("RoomBounce",lighting,new Vector3(0,5,5),new Color(.85f,.87f,.82f),30,20);
             RenderSettings.skybox=assets.skyMaterial;RenderSettings.ambientMode=AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor=new Color(.3f,.35f,.4f);RenderSettings.ambientEquatorColor=new Color(.18f,.22f,.25f);RenderSettings.ambientGroundColor=new Color(.09f,.11f,.13f);
+            RenderSettings.ambientSkyColor=new Color(.48f,.54f,.6f);RenderSettings.ambientEquatorColor=new Color(.36f,.4f,.43f);RenderSettings.ambientGroundColor=new Color(.18f,.2f,.22f);
             assets.skyMaterial.SetFloat("_Atmosphere",1);EditorUtility.SetDirty(assets.skyMaterial);
             RenderSettings.fog=true;RenderSettings.fogColor=new Color(.025f,.04f,.055f);RenderSettings.fogMode=FogMode.Exponential;RenderSettings.fogDensity=.012f;
             var cameraObject=new GameObject("Main Camera",typeof(Camera),typeof(AudioListener));cameraObject.tag="MainCamera";
@@ -77,6 +80,7 @@ namespace BRP.Editor
             var bench=(GameObject)PrefabUtility.InstantiatePrefab(assets.workbench,environment);bench.name="Assembly Pedestal";
             var floor=environment.gameObject.AddComponent<BoxCollider>();floor.center=new Vector3(0,-.12f,0);floor.size=new Vector3(20,.25f,20);
             var teleport=environment.gameObject.AddComponent<UnityEngine.XR.Interaction.Toolkit.Locomotion.Teleportation.TeleportationArea>();teleport.interactionLayers=1<<31;
+            teleport.colliders.Clear();teleport.colliders.Add(floor);
             var desk=bench.AddComponent<BoxCollider>();desk.center=new Vector3(0,.96f,0);desk.size=new Vector3(2.9f,.14f,1.8f);
             Sign("WallBrand",environment,assets.font,"БРП / ОПЫТНОЕ КОНСТРУКТОРСКОЕ БЮРО",new Vector3(0,5.7f,8.2f),.15f);
             Sign("BayNumber",environment,assets.font,"01    /    СБОРКА",new Vector3(-4,4.55f,8.2f),.12f);
@@ -95,6 +99,7 @@ namespace BRP.Editor
             var events=new GameObject("EventSystem",typeof(EventSystem),typeof(InputSystemUIInputModule));events.transform.SetParent(interaction.transform);events.GetComponent<InputSystemUIInputModule>().AssignDefaultActions();
             var systems=new GameObject("Game Systems");
             var game=systems.AddComponent<LaboratoryGame>();game.mainCamera=camera;
+            systems.AddComponent<SelectionFrame>();
             systems.AddComponent<VROperatorControls>().game=game;
             var assembly=systems.AddComponent<AssemblyController>();
             var audio=new GameObject("Audio").AddComponent<SoundEngine>();audio.transform.SetParent(systems.transform);
@@ -125,9 +130,24 @@ namespace BRP.Editor
             var effectPreview=(GameObject)PrefabUtility.InstantiatePrefab(assets.engineEffect);effectPreview.name="Engine Effect / Preview";effectPreview.SetActive(false);
             EditorSceneManager.SaveScene(scene,"Assets/BRP/Scenes/Laboratory.unity");
             PrefabUtility.SaveAsPrefabAsset(ui.gameObject,Prefabs+"/LaboratoryInterface.prefab");
+            SaveSpaceportScene(assets);
             EditorBuildSettings.scenes=new[]{new EditorBuildSettingsScene("Assets/BRP/Scenes/Laboratory.unity",true)};
             SceneView.lastActiveSceneView?.Frame(new Bounds(new Vector3(0,2,0),new Vector3(10,6,10)),false);
             Debug.Log("BRP authored scene saved: environment, editable rocket, UI and effects");
+        }
+
+        static void SaveSpaceportScene(LabSceneAssets assets)
+        {
+            var scene=EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Additive);
+            var root=(GameObject)PrefabUtility.InstantiatePrefab(assets.launchpad,scene);
+            root.name="BRP Spaceport / Service Infrastructure";
+            PrefabUtility.SaveAsPrefabAsset(root,Prefabs+"/SpaceportEnvironment.prefab");
+            var terrain=(GameObject)PrefabUtility.InstantiatePrefab(assets.terrain,scene);terrain.transform.localScale*=4;
+            var camera=new GameObject("Spaceport Overview",typeof(Camera));SceneManager.MoveGameObjectToScene(camera,scene);
+            camera.transform.position=new Vector3(58,32,-65);camera.transform.LookAt(new Vector3(-5,8,0));camera.GetComponent<Camera>().farClipPlane=5000;
+            var sun=new GameObject("Sun",typeof(Light));SceneManager.MoveGameObjectToScene(sun,scene);
+            sun.transform.rotation=Quaternion.Euler(38,-40,0);var light=sun.GetComponent<Light>();light.type=LightType.Directional;light.intensity=1.8f;light.color=new Color(1,.94f,.83f);light.shadows=LightShadows.Soft;
+            EditorSceneManager.SaveScene(scene,"Assets/BRP/Scenes/Spaceport.unity");EditorSceneManager.CloseScene(scene,true);
         }
 
         static AudioSource AudioSource(Transform parent,string name)
@@ -136,7 +156,8 @@ namespace BRP.Editor
         }
         static Light Light(string name,Transform parent,LightType type,Color color,float intensity,float range)
         {
-            var light=new GameObject(name).AddComponent<Light>();light.transform.SetParent(parent);light.type=type;light.color=color;light.intensity=intensity;light.range=range;return light;
+            var light=new GameObject(name).AddComponent<Light>();light.transform.SetParent(parent);light.type=type;light.color=color;light.intensity=intensity;light.range=range;
+            if(type==LightType.Point) light.cullingMask=~(1<<29);return light;
         }
         static void Point(string name,Transform parent,Vector3 position,Color color,float intensity,float range)
         {
@@ -165,18 +186,40 @@ namespace BRP.Editor
         }
         static void ConfigureMaterials()
         {
+            var ground=Material("BRP_Grass","Universal Render Pipeline/Lit",new Color(.19f,.24f,.15f));
+            ground.SetFloat("_Metallic",0);ground.SetFloat("_Smoothness",.08f);
+            var terrainImporter=AssetImporter.GetAtPath(Art+"/Models/launch_terrain.fbx") as ModelImporter;
+            if(terrainImporter!=null)
+            {
+                terrainImporter.AddRemap(new AssetImporter.SourceAssetIdentifier(typeof(Material),"BRP_Concrete"),ground);
+                terrainImporter.SaveAndReimport();
+            }
             string[] names={"BRP_Steel","BRP_Ivory","BRP_Navy","BRP_Rubber","BRP_Floor","BRP_Orange","BRP_CyanLight","BRP_WarmLight","BRP_Screen"};
-            Color[] colors={new Color(.24f,.29f,.31f),new Color(.64f,.65f,.6f),new Color(.045f,.075f,.09f),new Color(.016f,.022f,.025f),new Color(.085f,.11f,.12f),new Color(.85f,.25f,.055f),new Color(.08f,.65f,.8f),new Color(1,.63f,.27f),new Color(.035f,.14f,.16f)};
+            Color[] colors={new Color(.24f,.29f,.31f),new Color(.64f,.65f,.6f),new Color(.23f,.29f,.32f),new Color(.016f,.022f,.025f),new Color(.16f,.18f,.19f),new Color(.85f,.25f,.055f),new Color(.08f,.65f,.8f),new Color(1,.63f,.27f),new Color(.035f,.14f,.16f)};
             var materials=names.Select((name,i)=>Material(name,"Universal Render Pipeline/Lit",colors[i])).ToArray();
+            var silver=AssetDatabase.LoadAssetAtPath<Material>(Art+"/Materials/BRP_Silver.mat");
+            if(silver!=null) {silver.SetFloat("_Metallic",.38f);silver.SetFloat("_Smoothness",.38f);EditorUtility.SetDirty(silver);}
             for(int i=0;i<materials.Length;i++)
             {
-                materials[i].SetFloat("_Metallic",i==3?0:.55f);materials[i].SetFloat("_Smoothness",i==4?.3f:.55f);
+                materials[i].SetFloat("_Metallic",i==0?.65f:i==1||i==2?.15f:0);materials[i].SetFloat("_Smoothness",i==4?.18f:i==0?.42f:.28f);
                 if(i>=6) {materials[i].EnableKeyword("_EMISSION");materials[i].SetColor("_EmissionColor",colors[i]*(i==8?1.2f:3.5f));}
             }
-            foreach(string file in new[]{"studio_hangar","studio_bench"})
+            foreach(string file in new[]{"studio_hangar","studio_bench","spaceport"})
             {
                 var importer=(ModelImporter)AssetImporter.GetAtPath(Art+"/Models/"+file+".fbx");
+                if(importer==null) continue;
                 for(int i=0;i<names.Length;i++) importer.AddRemap(new AssetImporter.SourceAssetIdentifier(typeof(Material),names[i]),materials[i]);
+                if(file=="spaceport")
+                {
+                    string[] extraNames={"BRP_Concrete","BRP_Asphalt","BRP_Grass"};
+                    Color[] extraColors={new Color(.32f,.34f,.33f),new Color(.065f,.075f,.08f),new Color(.18f,.23f,.14f)};
+                    for(int i=0;i<extraNames.Length;i++)
+                    {
+                        var material=Material(extraNames[i],"Universal Render Pipeline/Lit",extraColors[i]);
+                        material.SetFloat("_Metallic",0);material.SetFloat("_Smoothness",.15f);
+                        importer.AddRemap(new AssetImporter.SourceAssetIdentifier(typeof(Material),extraNames[i]),material);
+                    }
+                }
                 importer.importCameras=false;importer.importLights=false;importer.importAnimation=false;importer.SaveAndReimport();
             }
         }
@@ -195,7 +238,7 @@ namespace BRP.Editor
             effect.smoke=Particles(go.transform,"ExhaustSmoke",assets.smokeMaterial,new Color(.7f,.75f,.79f,.35f),3.5f,1.1f,2.5f,100);
             effect.embers=Particles(go.transform,"HotFragments",assets.sparkMaterial,new Color(1,.7f,.3f,.9f),.7f,.04f,7,15);
             var smokeSize=effect.smoke.sizeOverLifetime;smokeSize.enabled=true;smokeSize.size=new ParticleSystem.MinMaxCurve(1,new AnimationCurve(new Keyframe(0,.25f),new Keyframe(1,3)));
-            var light=new GameObject("ExhaustLight").AddComponent<Light>();light.transform.SetParent(go.transform,false);light.type=LightType.Point;light.color=new Color(1,.45f,.12f);light.range=5;light.intensity=0;effect.glow=light;
+            var light=new GameObject("ExhaustLight").AddComponent<Light>();light.transform.SetParent(go.transform,false);light.type=LightType.Point;light.color=new Color(1,.45f,.12f);light.range=5;light.intensity=0;light.cullingMask=1<<29;effect.glow=light;
             var prefab=PrefabUtility.SaveAsPrefabAsset(go,Prefabs+"/EngineExhaust.prefab");UnityEngine.Object.DestroyImmediate(go);return prefab;
         }
         static ParticleSystem Particles(Transform parent,string name,Material material,Color color,float lifetime,float size,float speed,float rate)

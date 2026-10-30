@@ -17,7 +17,7 @@ namespace BRP.Editor
             var mixer=AssetDatabase.LoadAssetAtPath<AudioMixer>(path);
             if(mixer==null)
             {
-                var type=AppDomain.CurrentDomain.GetAssemblies().Select(a=>a.GetType("UnityEditor.Audio.AudioMixerController")).First(t=>t!=null);
+                var type=TypeCache.GetTypesDerivedFrom<AudioMixer>().Single(t=>t.FullName=="UnityEditor.Audio.AudioMixerController");
                 mixer=(AudioMixer)type.GetMethod("CreateMixerControllerAtPath",BindingFlags.Static|BindingFlags.Public|BindingFlags.NonPublic).Invoke(null,new object[]{path});
                 var master=type.GetProperty("masterGroup").GetValue(mixer);
                 var groupType=master.GetType();var children=Array.CreateInstance(groupType,3);

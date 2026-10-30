@@ -13,6 +13,8 @@ namespace BRP
         readonly Dictionary<string,GameObject> visuals=new Dictionary<string,GameObject>();
         readonly Dictionary<string,EngineVfx> exhausts=new Dictionary<string,EngineVfx>();
         readonly Dictionary<FlightBody,Transform> detachedVisuals=new Dictionary<FlightBody,Transform>();
+        readonly Dictionary<string,PartState> currentParts=new Dictionary<string,PartState>();
+        readonly Vector3[] orbitPoints=new Vector3[300];
         LineRenderer orbitLine,trail,targetLine;
         readonly List<Vector3> trailPoints=new List<Vector3>();
         GameObject planet,pad,canopy,targetVisual,terrain;
@@ -21,10 +23,11 @@ namespace BRP
         Vector3 cameraVelocity;
         bool previousMap;
         const float ViewScale=1.5f;
-        float cameraYaw=146,cameraPitch=16,cameraDistance=23;
-        float mapYaw=140,mapPitch=22,mapDistance=155;
+        float cameraYaw=35,cameraPitch=18,cameraDistance=35;
+        float mapYaw=180,mapPitch=20,mapDistance=210;
         TMPro.TextMeshPro apoLabel,periLabel,craftLabel;
         bool cameraManual;
+        AerodynamicVfx aerodynamicVfx;
         public void OrbitCamera(Vector2 delta,float zoom)
         {
             if(delta.sqrMagnitude>.01f||Mathf.Abs(zoom)>.01f) cameraManual=true;
@@ -59,8 +62,15 @@ namespace BRP
                 }
             }
             pad=Instantiate(source.launchpad,transform);pad.transform.localScale=Vector3.one*ViewScale;
-            if(source.terrain!=null) {terrain=Instantiate(source.terrain,transform);terrain.transform.localScale=Vector3.one*ViewScale*4;}
-            planet=Instantiate(source.planet,transform);planet.name="Earth";
+            float height=1,radius=.3f;
+            foreach(var part in flight.parts) {height=Mathf.Max(height,part.placement.position.y+part.definition.height);radius=Mathf.Max(radius,part.definition.radius);}
+            aerodynamicVfx=rocketRoot.gameObject.AddComponent<AerodynamicVfx>();aerodynamicVfx.Initialize(source.smokeMaterial,radius,height);
+            if(source.terrain!=null)
+            {
+                terrain=new GameObject("Launch terrain");terrain.transform.SetParent(transform,false);
+                Instantiate(source.terrain,terrain.transform);terrain.transform.localScale=Vector3.one*ViewScale*4;
+            }
+            planet=new GameObject("Earth");planet.transform.SetParent(transform,false);Instantiate(source.planet,planet.transform);
             foreach(var renderer in planet.GetComponentsInChildren<Renderer>()) renderer.sharedMaterial=source.planetMaterial;
             if(source.canopy!=null)
             {
@@ -89,8 +99,10 @@ namespace BRP
 
         public void Refresh(FlightBody flight,FlightBody target)
         {
+            currentParts.Clear();
             foreach(var part in flight.parts)
             {
+                currentParts[part.placement.instanceId]=part;
                 if(visuals.ContainsKey(part.placement.instanceId)) continue;
                 var model=Instantiate(part.definition.model,rocketRoot);visuals[part.placement.instanceId]=model;
                 model.transform.localPosition=part.placement.position;
@@ -99,11 +111,12 @@ namespace BRP
             }
             foreach(var entry in visuals)
             {
-                var state=flight.parts.Find(p=>p.placement.instanceId==entry.Key);
+                currentParts.TryGetValue(entry.Key,out var state);
                 bool visible=state!=null&&!state.destroyed;
                 if(entry.Value.activeSelf!=visible) entry.Value.SetActive(visible);
             }
             float atmosphere=(float)Math.Clamp(OrbitalMechanics.Density(flight.Altitude)/1.225,0,1);
+            aerodynamicVfx.Refresh(flight,!map&&!flight.landed&&!flight.crashed);
             assets.skyMaterial.SetFloat("_Atmosphere",map?0:Mathf.Exp(-(float)Math.Max(0,flight.Altitude)/26000));
             foreach(var part in flight.parts)
             {
@@ -143,7 +156,7 @@ namespace BRP
             if(orbitRefresh<=0)
             {
                 orbitRefresh=.35f;
-                var r=flight.position;var v=flight.velocity;var points=new Vector3[300];
+                var r=flight.position;var v=flight.velocity;var points=orbitPoints;
                 double step=double.IsInfinity(flight.Orbit.period)?10:flight.Orbit.period/299;
                 step=Math.Clamp(step,1,45);
                 double highest=0,lowest=double.PositiveInfinity;Vector3 apo=Vector3.zero,peri=Vector3.zero;
@@ -179,7 +192,7 @@ namespace BRP
             float lower=float.PositiveInfinity,upper=float.NegativeInfinity;
             foreach(var part in flight.parts) if(!part.destroyed) {lower=Mathf.Min(lower,part.placement.position.y);upper=Mathf.Max(upper,part.placement.position.y+part.definition.height);}
             var center=rocketRoot.TransformPoint(new Vector3(0,(lower+upper)*.5f,0));
-            if(!cameraManual) cameraDistance=Mathf.Clamp((upper-lower)*ViewScale*1.9f,7,32);
+            if(!cameraManual) cameraDistance=Mathf.Clamp((upper-lower)*ViewScale*2.4f,9,45);
             var desired=center+Quaternion.Euler(-cameraPitch,cameraYaw,0)*Vector3.forward*cameraDistance;
             if(previousMap) viewCamera.transform.position=desired;
             viewCamera.transform.position=Vector3.SmoothDamp(viewCamera.transform.position,desired,ref cameraVelocity,.55f);

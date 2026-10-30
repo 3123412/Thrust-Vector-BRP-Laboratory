@@ -38,6 +38,7 @@ namespace BRP
         public double Altitude => position.Magnitude - OrbitalMechanics.Radius;
         public DVector3 SurfaceVelocity => velocity - OrbitalMechanics.AtmosphereVelocity(position);
         public double VerticalSpeed => DVector3.Dot(SurfaceVelocity,position.Normalized);
+        public double Mach => Altitude<80000?(SurfaceVelocity-new DVector3(windSpeed,0,0)).Magnitude/OrbitalMechanics.SpeedOfSound(Altitude):0;
         public double Energy => parts.Sum(p=>p.destroyed ? 0 : p.energy);
         public double EnergyCapacity => parts.Where(p=>!p.destroyed).Sum(p=>(double)p.definition.electricCapacity);
         public double Fuel => parts.Where(p=>!p.destroyed).Sum(p=>p.fuel+p.oxidizer);
@@ -210,6 +211,7 @@ namespace BRP
             double frontalArea=Math.PI*maxRadius*maxRadius;
             bool faired=Has(PartKind.Fairing);
             double dragArea=frontalArea*(faired?.22:Has(PartKind.Capsule)?1.1:.55);
+            dragArea*=OrbitalMechanics.WaveDragMultiplier(speed/OrbitalMechanics.SpeedOfSound(altitude));
             if(Has(PartKind.CargoBay)) dragArea*=.85;
             if(brakesDeployed) dragArea+=parts.Where(p=>!p.destroyed&&p.definition.kind==PartKind.AirBrake).Count()*3;
             if(chuteDeployed) dragArea+=parts.Where(p=>!p.destroyed&&(mainChuteDeployed||p.definition.kind==PartKind.DrogueParachute)).Sum(p=>(double)p.definition.parachuteArea)*1.5;
@@ -301,7 +303,7 @@ namespace BRP
 
         public FlightBody Separate(bool payload=false)
         {
-            var cut=parts.FirstOrDefault(p=>!p.destroyed&&p.active&&(payload?p.definition.kind==PartKind.PayloadSeparator:p.definition.kind==PartKind.StackDecoupler||p.definition.kind==PartKind.RadialDecoupler)&&p.placement.stage<=stage);
+            var cut=parts.FirstOrDefault(p=>!p.destroyed&&p.active&&(payload?p.definition.kind==PartKind.PayloadSeparator:p.definition.kind==PartKind.StackDecoupler||p.definition.kind==PartKind.RadialDecoupler)&&(payload||p.placement.stage<=stage));
             if(cut==null) { if(!payload) stage=Math.Min(5,stage+1);lastEvent="Следующая ступень";stageEvent=true;return null; }
             var ids=new HashSet<string>{cut.placement.instanceId};
             bool change;
@@ -356,7 +358,7 @@ namespace BRP
             position+=orientation.Rotate(offset);velocity+=orientation.Rotate(DVector3.Cross(angularVelocity,offset));
             var impulse=orientation.Rotate(new DVector3(0,1,0))*500;
             velocity+=impulse/mass;carrier.velocity-=impulse/carrier.mass;
-            root.placement.parentId=null;throttle=0;aborted|=emergency;stageEvent=true;
+            root.placement.parentId=null;stage=capsule.placement.stage;throttle=0;aborted|=emergency;stageEvent=true;
             guidance=GuidanceMode.Retrograde;
             lastEvent=emergency?"Аварийное отделение капсулы":"Капсула отделена для возвращения";
             return carrier;

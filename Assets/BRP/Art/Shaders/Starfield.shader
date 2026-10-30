@@ -29,8 +29,8 @@ Shader "BRP/Starfield"
                 color+=spot*float3(.75,.86,1)*2.5;
                 float sun=pow(saturate(dot(d,normalize(float3(-.5,.08,.8)))),1400);
                 color+=sun*float3(1,.7,.35)*2;
-                float3 air=lerp(float3(.035,.09,.17),float3(.25,.37,.45),horizon);
-                if(d.y<0) air=lerp(float3(.025,.045,.055),float3(.25,.37,.45),pow(saturate(1+d.y),12));
+                float3 air=lerp(float3(.07,.23,.48),float3(.48,.62,.72),horizon);
+                if(d.y<0) air=lerp(float3(.05,.075,.09),float3(.48,.62,.72),pow(saturate(1+d.y),12));
                 color=lerp(color,air+sun*float3(1,.73,.4)*2,_Atmosphere);
                 return half4(color,1);
             }

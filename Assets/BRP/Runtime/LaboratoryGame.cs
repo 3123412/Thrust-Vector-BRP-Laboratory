@@ -79,7 +79,7 @@ namespace BRP
         public void ScaleAssembly(float factor)
         {
             if(IsFlying) return;
-            float scale=Mathf.Clamp(benchRoot.localScale.x*factor,.13f,.5f);
+            float scale=Mathf.Clamp(benchRoot.localScale.x*factor,.055f,.5f);
             benchRoot.localScale=Vector3.one*scale;
             float bottom=Assembly.Blueprint.parts.Select(p=>p.position.y).DefaultIfEmpty(0).Min();
             benchRoot.position=new Vector3(0,1.06f-bottom*scale,0);
@@ -109,6 +109,7 @@ namespace BRP
         }
         void OnAssemblyChanged()
         {
+            if(Selected!=null&&!Assembly.views.Contains(Selected)) Select(null);
             UI?.UpdateStats();
             if(Assembly.Blueprint.parts.Count>0)
             {
@@ -119,7 +120,7 @@ namespace BRP
             else comLine.positionCount=0;
         }
         public void Toast(string message) {UI.toast.text=message;toastUntil=Time.unscaledTime+4;}
-        public void Select(PartView view) {Selected=view;if(view!=null) UI.ShowDefinition(view.Definition);}
+        public void Select(PartView view) {Selected=view;if(view!=null) UI.ShowDefinition(view.Definition);else UI.ClearSelection();}
         public void Spawn(PartDefinition definition)
         {
             if(IsFlying) return;
@@ -259,6 +260,7 @@ namespace BRP
         public void ToggleMap() {if(presentation!=null) presentation.map=!presentation.map;}
         public void StartOrbitalPractice()
         {
+            if(TimeTrial) {Toast("Орбитальный стенд отключён в сборке на время");return;}
             if(CurrentMission!=null&&CurrentMission.id!=18&&CurrentMission.id!=19) {Toast("Орбитальный стенд доступен в свободном режиме и миссиях сближения");return;}
             if(Flight!=null) ReturnToWorkshop();
             Assembly.Load(CraftPresets.OrbitalVehicle(Catalog));StartFlight(false,true);
@@ -267,7 +269,7 @@ namespace BRP
             Flight.position=new DVector3(0,radius,0);Flight.velocity=new DVector3(Math.Sqrt(OrbitalMechanics.Mu/radius),0,0);
             Flight.throttle=0;Flight.guidance=GuidanceMode.Manual;
             Target=new FlightBody(CraftPresets.OrbitalVehicle(Catalog),Catalog);
-            Target.position=Flight.position+new DVector3(0,80,0);Target.velocity=Flight.velocity;Target.throttle=0;Target.launched=true;
+            Target.position=Flight.position+new DVector3(0,80,0);Target.velocity=Flight.velocity;Target.throttle=0;Target.launched=true;Target.guidance=GuidanceMode.Manual;
             Target.orientation=new DQuaternion(Quaternion.Euler(0,0,180));Flight.lastEvent="Орбитальный стенд / высота 180 км";presentation.map=false;
             Toast("Орбитальный стенд: I/K, J/L, U/O для сближения");
         }
@@ -337,8 +339,10 @@ namespace BRP
             xrRig.SetActive(true);xrRig.transform.position=new Vector3(0,0,-2.4f);
             var camera=xrRig.GetComponentInChildren<Camera>();if(camera!=null) mainCamera=camera;
             mainCamera.cullingMask&=~(1<<29);ScaleAssembly(.55f);
-            UI.canvas.renderMode=RenderMode.WorldSpace;UI.canvas.worldCamera=mainCamera;
-            UI.root.sizeDelta=new Vector2(1920,1080);UI.root.position=new Vector3(-1.44f,2.8f,.5f);UI.root.localScale=Vector3.one*.0015f;
+            UI.ConfigureVR(mainCamera);
+            QualitySettings.SetQualityLevel(1,true);
+            var cameraData=mainCamera.GetComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
+            if(cameraData!=null) cameraData.renderPostProcessing=false;
             var raycaster=UI.gameObject.AddComponent<UnityEngine.XR.Interaction.Toolkit.UI.TrackedDeviceGraphicRaycaster>();
             var eventSystem=FindAnyObjectByType<EventSystem>();
             var old=eventSystem.GetComponent<InputSystemUIInputModule>();if(old!=null) Destroy(old);
@@ -431,13 +435,7 @@ namespace BRP
             int iterations=0;
             while(flightAccumulator>=step&&iterations++<300)
             {
-                UpdatePrograms(step);
-                Flight.Step(step);
-                foreach(var piece in debris) piece.Step(step);
-                Target?.Step(step);
-                if(OnStand) {Flight.position=new DVector3(0,OrbitalMechanics.Radius+2,0);Flight.velocity=OrbitalMechanics.AtmosphereVelocity(Flight.position);Flight.angularVelocity=new DVector3();Flight.orientation=DQuaternion.Identity;}
-                if(Flight.lastThrust<1&&Flight.Powered) orbitPowerTime+=step;
-                if(Flight.Orbit.periapsis>=120000&&Flight.Orbit.apoapsis<=250000) orbitReached=true;
+                StepSimulation(step);
                 flightAccumulator-=(float)step;
             }
             presentation.Refresh(Flight,Target);Sound.SetEngine((float)(Flight.lastThrust/900000));
@@ -463,6 +461,16 @@ namespace BRP
             if(Flight.Has(PartKind.Satellite)) ReleasePayload();
             var carrier=Flight.SeparateCapsule(true);if(carrier!=null) debris.Add(carrier);
             Ascent.active=false;recovery.active=true;Flight.throttle=0;Sound.Play(SoundCue.Abort);Toast("Аварийное спасение включено");
+        }
+        public void StepSimulation(double step)
+        {
+            if(Flight==null) return;
+            UpdatePrograms(step);Flight.Step(step);
+            foreach(var piece in debris) piece.Step(step);
+            Target?.Step(step);
+            if(OnStand) {Flight.position=new DVector3(0,OrbitalMechanics.Radius+2,0);Flight.velocity=OrbitalMechanics.AtmosphereVelocity(Flight.position);Flight.angularVelocity=new DVector3();Flight.orientation=DQuaternion.Identity;}
+            if(Flight.lastThrust<1&&Flight.Powered) orbitPowerTime+=step;
+            if(Flight.Orbit.periapsis>=120000&&Flight.Orbit.apoapsis<=250000) orbitReached=true;
         }
         public void CycleTimeWarp()
         {

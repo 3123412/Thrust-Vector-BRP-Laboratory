@@ -18,7 +18,7 @@ MonoBehaviour:
   kind: 14
   category: 0
   mount: 1
-  model: {fileID: 919132149155446097, guid: d0bad70097af1c3449d3ba6a84126650, type: 3}
+  model: {fileID: 6364344666671679435, guid: 645d7cb820d126045a2a2247d3553371, type: 3}
   thumbnail: {fileID: -5688469089164163131, guid: f46d77d61c9375846a32905badf9e931, type: 3}
   dryMass: 30
   height: 0.28

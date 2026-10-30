@@ -22,8 +22,34 @@ namespace BRP
         [SerializeField] RectTransform flightSystems,fuelBar,energyBar,throttleBar;
         [SerializeField] TextMeshProUGUI systemData,orientationData;
         [SerializeField] AttitudeIndicator attitude;
+        [SerializeField] GameObject scaleDown,scaleUp,warpControl;
+        [SerializeField] TextMeshProUGUI aeroReadout;
+        [SerializeField] TextMeshProUGUI controlHint;
         PartCategory category;
         public bool ModalOpen=>modal!=null||(homePanel!=null&&homePanel.gameObject.activeSelf);
+
+        public void ConfigureVR(Camera camera)
+        {
+            canvas.renderMode=RenderMode.WorldSpace;canvas.worldCamera=camera;
+            root.sizeDelta=new Vector2(1920,1080);root.position=new Vector3(-1.92f,3.05f,1.45f);
+            root.rotation=Quaternion.identity;root.localScale=Vector3.one*.002f;
+            PlaceVRPanel(left,new Vector3(-1.2f,1.65f,-.65f),-32,.0024f);
+            PlaceVRPanel(right,new Vector3(1.2f,1.65f,-.65f),32,.0024f);
+            PlaceVRPanel(flightPanel,new Vector3(-1.2f,1.65f,-.65f),-32,.0024f);
+            PlaceVRPanel(flightSystems,new Vector3(1.2f,1.65f,-.65f),32,.0024f);
+            PlaceVRPanel(bottom,new Vector3(0,1.02f,-1.5f),0,.0017f);
+            PlaceVRPanel(flightActions,new Vector3(0,1.02f,-1.5f),0,.0017f);
+            var navigation=root.Find("Navigation") as RectTransform;
+            if(navigation!=null) PlaceVRPanel(navigation,new Vector3(0,2.6f,-.4f),0,.0013f);
+            GetComponent<GraphicRaycaster>().enabled=false;
+        }
+
+        void PlaceVRPanel(RectTransform panel,Vector3 center,float yaw,float scale)
+        {
+            var rotation=Quaternion.Euler(0,yaw,0);
+            panel.rotation=rotation;panel.localScale=Vector3.one*(scale/root.lossyScale.x);
+            panel.position=center+rotation*new Vector3(-panel.rect.width*scale*.5f,panel.rect.height*scale*.5f,0);
+        }
 
         public void Initialize(LaboratoryGame owner,TMP_FontAsset font)
         {
@@ -49,18 +75,18 @@ namespace BRP
             string[] links={"Программа","Чертежи","Журнал","Справка","Настройки"};
             string[] commands={"missions","blueprints","records","help","settings"};
             for(int i=0;i<links.Length;i++) UiTheme.Command(header,links[i],960+i*155,17,145,40,commands[i]);
-            UiTheme.Command(header,"Выход",1755,17,96,40,"home");
+            UiTheme.Command(header,"Меню",1755,17,96,40,"home");
             phase=UiTheme.Text(root,"АНГАР 01     /     СБОРКА",42,112,650,30,12,UiTheme.Cyan);
-            UiTheme.Command(root,"−",922,107,34,30,"scale",-1);
-            UiTheme.Command(root,"+",966,107,34,30,"scale",1);
+            scaleDown=UiTheme.Command(root,"−",922,107,40,38,"scale",-1).gameObject;
+            scaleUp=UiTheme.Command(root,"+",972,107,40,38,"scale",1).gameObject;
             status=UiTheme.Text(root,"ГОТОВ К РАБОТЕ",1400,112,470,24,11,UiTheme.Muted);status.alignment=TextAlignmentOptions.Right;
             left=UiTheme.Panel("PartsLibrary",root,24,156,324,764);
             UiTheme.Text(left,"КОМПОНЕНТЫ",20,18,280,32,20);
             UiTheme.Text(left,"50 типов / выбор и перенос",20,55,280,24,12,UiTheme.Muted);
-            string[] tabs={"Корпус","Тяга","Рули","Ток","Груз"};
-            for(int i=0;i<5;i++) UiTheme.Command(left,tabs[i],14+i*59,96,56,36,"category",i);
-            UiTheme.Divider(left,18,146,288);
-            catalogContent=UiTheme.Scroll(left,"Parts",12,163,300,579,out var scroll);
+            string[] tabs={"Корпус","Двигатели","Управление","Электрика","Груз"};
+            for(int i=0;i<5;i++) UiTheme.Command(left,tabs[i],14+(i%2)*150,92+(i/2)*43,144,38,"category",i);
+            UiTheme.Divider(left,18,228,288);
+            catalogContent=UiTheme.Scroll(left,"Parts",12,244,300,498,out var scroll);
             right=UiTheme.Panel("CraftInspector",root,1572,156,324,764);
             UiTheme.Text(right,"ИНЖЕНЕРНЫЙ РАСЧЁТ",22,20,280,29,18);
             craftValues=new TextMeshProUGUI[4];
@@ -93,22 +119,24 @@ namespace BRP
             missionGoal=UiTheme.Text(root,"Соберите и испытайте свою конструкцию.",381,254,340,120,14,UiTheme.Muted);
             toast=UiTheme.Text(root,"",430,884,1060,44,17,UiTheme.Cyan);toast.alignment=TextAlignmentOptions.Center;
             UiTheme.Text(root,"BRP    /    65 ЛЕТ ПЕРВОМУ ПОЛЁТУ",28,1045,540,23,10,UiTheme.Muted);
-            UiTheme.Text(root,"ЛКМ  Выбор     ПКМ  Обзор     R  Поворот     Ctrl+Z  Отмена",1070,1045,820,23,11,UiTheme.Muted).alignment=TextAlignmentOptions.Right;
+            controlHint=UiTheme.Text(root,"ЛКМ  Выбор     ПКМ  Обзор     R  Поворот     Ctrl+Z  Отмена",1070,1045,820,23,11,UiTheme.Muted);
+            controlHint.alignment=TextAlignmentOptions.Right;
             CreateFlightControls();BuildHome();SetFlight(false);
         }
 
         void BuildHome()
         {
             homePanel=UiTheme.Panel("MainMenu",root,44,154,650,750,new Color(.025f,.035f,.04f,.94f));
-            UiTheme.Text(homePanel,"ПРОГРАММА BRP     /     1961–2026",36,34,570,28,12,UiTheme.Cyan);
+            UiTheme.Text(homePanel,"КОНСТРУКТОРСКОЕ БЮРО / 01",36,34,570,28,16,UiTheme.Cyan);
             UiTheme.Text(homePanel,"ВЕКТОР\nТЯГИ",30,108,590,210,82);
             UiTheme.Text(homePanel,"ЛАБОРАТОРИЯ BRP",36,334,570,40,23,UiTheme.Muted);
             UiTheme.Divider(homePanel,36,402,570);
-            UiTheme.Text(homePanel,"Ракета начинается с расчёта.\nСоберите свою и проверьте её в полёте.",36,430,570,70,19);
+            UiTheme.Text(homePanel,"От первого двигателя до орбиты.\nСборка. Выведение. Возвращение.",36,430,570,70,21);
             UiTheme.Command(homePanel,"Продолжить программу  →",36,535,570,58,"campaign",0,true);
             UiTheme.Command(homePanel,"Свободный режим",36,608,276,44,"sandbox");
             UiTheme.Command(homePanel,"Сборка на время",330,608,276,44,"trial");
-            UiTheme.Command(homePanel,"Подключить VR",36,672,570,40,"vr");
+            UiTheme.Command(homePanel,"Подключить VR",36,672,276,40,"vr");
+            UiTheme.Command(homePanel,"Завершить игру",330,672,276,40,"quit");
         }
 
         void CreateFlightControls()
@@ -130,7 +158,7 @@ namespace BRP
             systemData=UiTheme.Text(flightSystems,"",22,500,280,116,14,UiTheme.Muted);
             UiTheme.Command(flightSystems,"Программа выведения",20,635,284,43,"ascent",0,true);
             UiTheme.Command(flightSystems,"Возвращение капсулы",20,691,284,43,"recover");
-            UiTheme.Command(root,"Время ×  /  T",365,107,170,32,"warp");
+            warpControl=UiTheme.Command(root,"Время ×  /  T",365,107,170,38,"warp").gameObject;
             flightPanel=UiTheme.Panel("FlightReadout",root,24,156,324,574);
             UiTheme.Text(flightPanel,"ПОЛЁТНЫЕ ДАННЫЕ",22,20,280,28,18);
             flightValues=new TextMeshProUGUI[4];
@@ -145,6 +173,10 @@ namespace BRP
             UiTheme.Command(flightPanel,"Тяга −",20,508,85,42,"throttle",-1);
             UiTheme.Command(flightPanel,"Стоп",117,508,85,42,"throttle",0);
             UiTheme.Command(flightPanel,"Тяга +",214,508,90,42,"throttle",1);
+            var aeroPanel=UiTheme.Panel("Atmospheric Flight",root,24,750,324,170);
+            aeroPanel.SetParent(flightPanel,true);
+            UiTheme.Text(aeroPanel,"АТМОСФЕРНЫЙ РЕЖИМ",22,16,280,25,16,UiTheme.Cyan);
+            aeroReadout=UiTheme.Text(aeroPanel,"M 0.00",22,51,280,105,19);
             flightActions=UiTheme.Panel("FlightCommands",root,373,947,1174,76,UiTheme.Ink);
             UiTheme.Command(flightActions,"СТУПЕНЬ  /  Space",14,12,240,52,"next_stage",0,true);
             UiTheme.Command(flightActions,"Отделить груз",266,15,172,45,"payload");
@@ -159,6 +191,10 @@ namespace BRP
             left.gameObject.SetActive(!active);right.gameObject.SetActive(!active);bottom.gameObject.SetActive(!active);
             flightPanel.gameObject.SetActive(active);flightActions.gameObject.SetActive(active);
             flightSystems.gameObject.SetActive(active);
+            if(scaleDown!=null) scaleDown.SetActive(!active);
+            if(scaleUp!=null) scaleUp.SetActive(!active);
+            if(warpControl!=null) warpControl.SetActive(active);
+            if(controlHint!=null) controlHint.text=game.VREnabled?"ЛУЧ  Кнопки     ХВАТ  Детали":active?"Shift / Ctrl  Тяга     Space  Ступень     M  Карта     T  Время":"ЛКМ  Выбор     ПКМ  Обзор     R  Поворот     Ctrl+Z  Отмена";
             missionTitle.gameObject.SetActive(!active);missionGoal.gameObject.SetActive(!active);
             phase.text=active?"КОСМОДРОМ     /     ПОЛЁТНЫЕ ИСПЫТАНИЯ":"АНГАР 01     /     ИНЖЕНЕРНАЯ СБОРКА";
         }
@@ -206,6 +242,10 @@ namespace BRP
             detailTitle.text=d.title;
             detailText.text=d.description+$"\n\nМасса: {d.dryMass:N0} кг"+(d.thrust>0?$"\nТяга: {d.thrust/1000:N0} кН · Isp {d.specificImpulse:N0} с":"")+(d.fuelCapacity+d.oxidizerCapacity>0?$"\nЗапас: {d.fuelCapacity+d.oxidizerCapacity:N0} кг":"");
         }
+        public void ClearSelection()
+        {
+            detailTitle.text="Выберите компонент";detailText.text="Паспорт детали, масса и назначение появятся здесь.";
+        }
         public void UpdateStats()
         {
             var craft=game.Assembly.Blueprint;
@@ -228,6 +268,13 @@ namespace BRP
             flightValues[0].text=(body.Altitude/1000).ToString("F2");flightValues[1].text=body.SurfaceVelocity.Magnitude.ToString("F0");
             flightValues[2].text=Format(orbit.apoapsis);flightValues[3].text=Format(orbit.periapsis);
             flightData.text=$"T+{body.elapsed:0000}с   Тяга {body.throttle*100:F0}%   {body.Temperature:F0}К";
+            if(aeroReadout!=null)
+            {
+                string regime=body.Altitude>=80000?"ВНЕ АТМОСФЕРЫ":body.Mach>=5?"ГИПЕРЗВУК":body.Mach>=1.2?"СВЕРХЗВУК":body.Mach>=.8?"ТРАНСЗВУК":"ДОЗВУК";
+                string mach=body.Altitude>=80000?"—":body.Mach.ToString("F2");
+                aeroReadout.text=$"{regime}\nM {mach}    q {body.dynamicPressure/1000:F1} кПа\nНагрев {body.Temperature:F0} К";
+                aeroReadout.color=body.Mach>=.8&&body.Mach<1.2?UiTheme.Orange:UiTheme.TextColor;
+            }
             attitude.SetState(body);
             bool horizon=body.Powered&&(body.Has(PartKind.HorizonSensor)||body.Has(PartKind.Capsule));
             attitude.color=horizon?Color.white:new Color(1,1,1,.25f);
@@ -263,6 +310,9 @@ namespace BRP
             missionTitle.gameObject.SetActive(false);missionGoal.gameObject.SetActive(false);
             flightPanel.gameObject.SetActive(false);flightActions.gameObject.SetActive(false);
             flightSystems.gameObject.SetActive(false);
+            if(scaleDown!=null) scaleDown.SetActive(false);
+            if(scaleUp!=null) scaleUp.SetActive(false);
+            if(warpControl!=null) warpControl.SetActive(false);
         }
         public void ShowMissions()
         {

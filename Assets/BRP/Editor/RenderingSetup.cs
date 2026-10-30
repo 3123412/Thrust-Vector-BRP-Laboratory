@@ -18,9 +18,9 @@ namespace BRP.Editor
                 string path="Assets/BRP/Rendering/"+names[i]+".asset";
                 var pipeline=AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(path);
                 if(pipeline==null) {pipeline=Object.Instantiate(source);pipeline.name="BRP "+names[i];AssetDatabase.CreateAsset(pipeline,path);}
-                pipeline.supportsHDR=true;pipeline.msaaSampleCount=i==0?2:4;pipeline.renderScale=i==0?.85f:1;
+                pipeline.supportsHDR=i>0;pipeline.msaaSampleCount=4;pipeline.renderScale=1;
                 pipeline.mainLightShadowmapResolution=i==0?1024:i==1?2048:4096;
-                pipeline.maxAdditionalLightsCount=i==2?8:4;
+                pipeline.maxAdditionalLightsCount=i==2?8:i==1?4:2;
                 pipeline.shadowDistance=i==0?25:80;pipeline.shadowCascadeCount=i==2?4:2;
                 var properties=new SerializedObject(pipeline);
                 properties.FindProperty("m_MainLightShadowsSupported").boolValue=true;

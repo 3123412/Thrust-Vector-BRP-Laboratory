@@ -96,6 +96,15 @@ namespace BRP.Editor
                 craft=CraftPresets.Create(catalog);craft.parts[0].position=new Vector3(float.NaN,0,0);
                 Require(craft.Validate(catalog).Any(e=>e.Contains("положение")),"NaN accepted");return "Both invalid inputs rejected";
             });
+            Check("sound speed and transonic drag",()=>
+            {
+                Require(Math.Abs(OrbitalMechanics.SpeedOfSound(0)-340.29)<.1,"Sea-level sound speed incorrect");
+                Require(Math.Abs(OrbitalMechanics.SpeedOfSound(11000)-295.07)<.1,"Tropopause sound speed incorrect");
+                Require(OrbitalMechanics.WaveDragMultiplier(1.05)>OrbitalMechanics.WaveDragMultiplier(.5),"No transonic drag rise");
+                Require(OrbitalMechanics.WaveDragMultiplier(3)<OrbitalMechanics.WaveDragMultiplier(1.05),"Wave drag does not recover");
+                for(double mach=0;mach<12;mach+=.01) Require(double.IsFinite(OrbitalMechanics.WaveDragMultiplier(mach)),"Invalid drag coefficient");
+                return "340.29 m/s at sea level; 295.07 m/s at 11 km; continuous finite drag envelope";
+            });
             Directory.CreateDirectory("Artifacts");File.WriteAllText("Artifacts/flight-verification.json",JsonUtility.ToJson(report,true));
             Debug.Log($"BRP flight scenarios: {report.passed} passed, {report.failed} failed");return report;
         }

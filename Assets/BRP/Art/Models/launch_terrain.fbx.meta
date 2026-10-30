@@ -3,7 +3,12 @@ guid: 30d17f3b23600f3469d7b863f0a5f090
 ModelImporter:
   serializedVersion: 24600
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: BRP_Concrete
+    second: {fileID: 2100000, guid: fc8698110ac2d9746a97ad7b492807fc, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

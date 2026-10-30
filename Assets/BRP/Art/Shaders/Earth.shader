@@ -41,13 +41,11 @@ Shader "BRP/Earth"
             {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 float3 n=normalize(i.normalWS);
-                float2 uv=i.uv*float2(12,6);
-                float terrain=noise(uv)+noise(uv*2.1)*.35+noise(uv*5.3)*.12;
-                float land=smoothstep(.63,.72,terrain);
+                float2 uv=i.uv*float2(120,60);
                 float3 color=SAMPLE_TEXTURE2D(_MainTex,sampler_MainTex,i.uv).rgb;
-                float ice=smoothstep(.77,.94,abs(i.uv.y-.5)*2);
-                float cloud=smoothstep(.68,.83,noise(uv*2+float2(.3,.1))+noise(uv*7)*.3)*.65;
-                color=lerp(color,float3(.82,.9,.92),cloud*.35);
+                float cloud=smoothstep(.78,.96,noise(uv)+noise(uv*2.1)*.3+noise(uv*4.3)*.15);
+                cloud*=smoothstep(.4,.7,noise(i.uv*float2(16,8)));
+                color=lerp(color,float3(.82,.9,.92),cloud*.6);
                 float light=saturate(dot(n,normalize(float3(-.6,.7,-.5))));
                 color*=.13+light*.95;
                 float3 view=normalize(_WorldSpaceCameraPos-i.positionWS);

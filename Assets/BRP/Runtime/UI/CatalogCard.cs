@@ -10,7 +10,7 @@ namespace BRP
         public void OnBeginDrag(PointerEventData e) {dragged=true;LaboratoryGame.Instance.BeginCatalogDrag(definition);}
         public void OnDrag(PointerEventData e) { }
         public void OnEndDrag(PointerEventData e) {LaboratoryGame.Instance.EndDrag();}
-        public void OnPointerEnter(PointerEventData e) {LaboratoryGame.Instance.UI.ShowDefinition(definition);}
+        public void OnPointerEnter(PointerEventData e) {LaboratoryGame.Instance.Sound.Hover();}
         public void OnPointerExit(PointerEventData e) { }
         public void OnPointerClick(PointerEventData e)
         {

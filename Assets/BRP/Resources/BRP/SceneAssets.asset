@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BRP.LabSceneAssets
   hangar: {fileID: 919132149155446097, guid: 3c184ec00cece8349ace077a938a7116, type: 3}
   workbench: {fileID: 919132149155446097, guid: 8f71f2cf89d78ab4ab492f4fea814bce, type: 3}
-  launchpad: {fileID: 919132149155446097, guid: 2defe45aa706254469880e76d0c987ba, type: 3}
+  launchpad: {fileID: 919132149155446097, guid: 82154c03c3862d64db141752050c16de, type: 3}
   teststand: {fileID: 919132149155446097, guid: 3849aa49bf2cf6147bc0597a43ca0813, type: 3}
   planet: {fileID: 919132149155446097, guid: 27ab23ee75063a743a0866076d72f158, type: 3}
   canopy: {fileID: 919132149155446097, guid: 69e7fcb687d80b945b90d33010340499, type: 3}
