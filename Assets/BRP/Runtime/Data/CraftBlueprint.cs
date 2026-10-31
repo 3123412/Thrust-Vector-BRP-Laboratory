@@ -16,6 +16,12 @@ namespace BRP
         public Vector3 position;
         public Quaternion rotation = Quaternion.identity;
         public Color color = new Color(0.82f, 0.86f, 0.88f);
+        public Color accentColor = new Color(.85f,.25f,.055f);
+        public float paintSmoothness = .38f;
+        public string decalId = "";
+        public string decalText = "";
+        public float decalAngle = 180;
+        public float decalScale = .65f;
     }
 
     [Serializable]

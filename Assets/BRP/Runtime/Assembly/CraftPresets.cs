@@ -96,5 +96,21 @@ namespace BRP
             b.Surface(PartKind.SolarPanel,shield,6,.1f);b.Surface(PartKind.PowerDistributor,shield,8,.1f);
             return b.craft;
         }
+
+        public static CraftBlueprint LunarLander(PartCatalog catalog)
+        {
+            var b=new Builder(catalog,"БРП-Л / Лунный посадочный модуль");
+            var tank=b.Add(PartKind.SecondStage,Vector3.zero);
+            b.Add(PartKind.VacuumEngine,Vector3.down*catalog.Find(PartKind.VacuumEngine).height,tank,1);
+            for(int i=0;i<4;i++) b.Surface(PartKind.LandingLeg,tank,2+i*2,-1);
+            b.Surface(PartKind.FuelLine,tank,3,.8f);b.Surface(PartKind.FuelPump,tank,5,.8f);
+            b.Surface(PartKind.Pressurizer,tank,7,.8f);b.Surface(PartKind.FuelValve,tank,9,.8f);
+            var instruments=b.Above(PartKind.InstrumentBay,tank);
+            PartKind[] systems={PartKind.SolarPanel,PartKind.PowerDistributor,PartKind.RcsBlock,PartKind.ServiceTank,PartKind.Altimeter,PartKind.Antenna,PartKind.Transmitter,PartKind.HorizonSensor};
+            for(int i=0;i<systems.Length;i++) b.Surface(systems[i],instruments,2+i,.1f);
+            var capsule=b.Above(PartKind.Capsule,instruments);b.CapsuleSystems(capsule);
+            b.Above(PartKind.DockingPort,capsule);
+            return b.craft;
+        }
     }
 }

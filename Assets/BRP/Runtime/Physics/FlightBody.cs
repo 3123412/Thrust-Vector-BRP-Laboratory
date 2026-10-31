@@ -21,12 +21,15 @@ namespace BRP
     public sealed class FlightBody
     {
         public readonly List<PartState> parts = new List<PartState>();
+        public CelestialBody referenceBody=CelestialBody.Earth;
+        public bool IsLunar=>referenceBody==CelestialBody.Moon;
         public DVector3 position, velocity, angularVelocity, centerOfMass;
         public DQuaternion orientation = DQuaternion.Identity;
         public InertiaTensor inertia;
         public double mass, elapsed, maxAltitude, maxSpeed, lastThrust, dynamicPressure, heatFlux, windSpeed;
         public double maxG, totalImpulse, totalFuelUsed, poweredTime, telemetryTime, stableTime, recordedTime;
         public double throttle = 1;
+        public double launchSupportAltitude=2;
         public int stage;
         public bool launched, landed, crashed, chuteDeployed, mainChuteDeployed, brakesDeployed, valveOpen = true, stageEvent, payloadReleased, aborted, docked;
         public GuidanceMode guidance = GuidanceMode.Hold;
@@ -35,15 +38,15 @@ namespace BRP
         public DVector3 targetDirection;
         public string lastEvent = "Ожидание запуска";
         public event Action<PartState> PartFailed;
-        public double Altitude => position.Magnitude - OrbitalMechanics.Radius;
-        public DVector3 SurfaceVelocity => velocity - OrbitalMechanics.AtmosphereVelocity(position);
+        public double Altitude => position.Magnitude - referenceBody.radius;
+        public DVector3 SurfaceVelocity => velocity - referenceBody.SurfaceVelocity(position);
         public double VerticalSpeed => DVector3.Dot(SurfaceVelocity,position.Normalized);
-        public double Mach => Altitude<80000?(SurfaceVelocity-new DVector3(windSpeed,0,0)).Magnitude/OrbitalMechanics.SpeedOfSound(Altitude):0;
+        public double Mach => referenceBody.atmosphere&&Altitude<80000?(SurfaceVelocity-new DVector3(windSpeed,0,0)).Magnitude/OrbitalMechanics.SpeedOfSound(Altitude):0;
         public double Energy => parts.Sum(p=>p.destroyed ? 0 : p.energy);
         public double EnergyCapacity => parts.Where(p=>!p.destroyed).Sum(p=>(double)p.definition.electricCapacity);
         public double Fuel => parts.Where(p=>!p.destroyed).Sum(p=>p.fuel+p.oxidizer);
         public double Temperature => parts.Count>0 ? parts.Max(p=>p.temperature) : 288;
-        public OrbitElements Orbit => OrbitalMechanics.Elements(position,velocity);
+        public OrbitElements Orbit => OrbitalMechanics.Elements(position,velocity,referenceBody.mu,referenceBody.radius);
         public bool Has(PartKind kind) => parts.Any(p=>!p.destroyed && p.definition.kind==kind);
         public bool Powered => Energy > 0;
         public bool Telemetry => Has(PartKind.Antenna) && Has(PartKind.Transmitter) && Powered;
@@ -63,11 +66,14 @@ namespace BRP
             }
             RecalculateMass();
             position=new DVector3(0,OrbitalMechanics.Radius+2,0);
+            launchSupportAltitude=2+GroundClearance;
+            position=new DVector3(0,OrbitalMechanics.Radius+launchSupportAltitude,0);
             velocity=OrbitalMechanics.AtmosphereVelocity(position);
         }
 
         FlightBody(List<PartState> detached, FlightBody source)
         {
+            referenceBody=source.referenceBody;
             parts.AddRange(detached);
             stage=source.stage; launched=true; guidance=GuidanceMode.Manual;
             orientation=source.orientation; angularVelocity=source.angularVelocity;
@@ -91,12 +97,27 @@ namespace BRP
             foreach(var part in parts)
             {
                 var center=part.placement.position+part.placement.rotation*Vector3.up*(part.definition.height*.5f);
-                inertia.Add(part.Mass,new DVector3(center)-centerOfMass,part.definition.radius,part.definition.height);
+                inertia.Add(part.Mass,new DVector3(center)-centerOfMass,part.definition.radius,part.definition.height,new DVector3(part.placement.rotation*Vector3.up));
             }
         }
 
+        void RefreshMassFrame()
+        {
+            var previousCenter=centerOfMass;
+            RecalculateMass();
+            var offset=centerOfMass-previousCenter;
+            position+=orientation.Rotate(offset);
+            velocity+=orientation.Rotate(DVector3.Cross(angularVelocity,offset));
+        }
+
+        void ApplyImpulse(DVector3 impulse,DVector3 point)
+        {
+            velocity+=impulse/mass;
+            angularVelocity+=inertia.Solve(orientation.Inverse.Rotate(DVector3.Cross(point-position,impulse)));
+        }
+
         public double AvailableThrust => parts.Where(p=>!p.destroyed&&p.active&&p.placement.stage==stage&&(p.definition.kind!=PartKind.EscapeTower||aborted)).Sum(p=>(double)p.definition.thrust);
-        public double TWR => AvailableThrust / Math.Max(1,mass*OrbitalMechanics.StandardGravity);
+        public double TWR => AvailableThrust / Math.Max(1,mass*referenceBody.SurfaceGravity);
         public double DeltaV
         {
             get
@@ -128,7 +149,7 @@ namespace BRP
         {
             double generation=0, consumption=0;
             double r=position.Magnitude;
-            bool sunlight=position.x>0 || position.y*position.y+position.z*position.z>OrbitalMechanics.Radius*OrbitalMechanics.Radius;
+            bool sunlight=position.x>0 || position.y*position.y+position.z*position.z>referenceBody.radius*referenceBody.radius;
             bool bus=Has(PartKind.PowerDistributor);
             foreach(var p in parts.Where(p=>!p.destroyed))
             {
@@ -152,8 +173,17 @@ namespace BRP
 
         public void Step(double dt)
         {
+            if(!double.IsFinite(dt)||dt<=0) return;
+            if(dt>.020000001)
+            {
+                int count=(int)Math.Ceiling(dt/.02);
+                for(int i=0;i<count;i++) Step(dt/count);
+                return;
+            }
             if(!launched || landed || crashed || mass<=0) return;
             elapsed+=dt;
+            double initialMass=mass;
+            var initialCenter=centerOfMass;
             UpdatePower(dt);
             var localForce=new DVector3();
             var localTorque=new DVector3();
@@ -167,7 +197,7 @@ namespace BRP
                 if(!solid&&!valveOpen) setting=0;
                 if(d.kind==PartKind.EscapeTower&&!aborted) setting=0;
                 if(d.kind==PartKind.VernierEngine && manualInput.Magnitude<.01 && guidance==GuidanceMode.Manual) setting=0;
-                double seaLevelFactor=1-.15*Math.Exp(-Math.Max(0,Altitude)/7000);
+                double seaLevelFactor=referenceBody.atmosphere?1-.15*Math.Exp(-Math.Max(0,Altitude)/7000):1;
                 double thrust=d.thrust*setting*seaLevelFactor;
                 double needed=thrust/(d.specificImpulse*OrbitalMechanics.StandardGravity)*dt;
                 if(needed<=0) continue;
@@ -199,9 +229,10 @@ namespace BRP
             if(Telemetry) telemetryTime+=dt;
             if(Has(PartKind.FlightRecorder)&&Powered) recordedTime+=dt;
             if(Tilt<10) stableTime+=dt;
-            RecalculateMass();
+            RefreshMassFrame();
+            localTorque+=DVector3.Cross(initialCenter-centerOfMass,localForce);
             double altitude=Math.Max(0,Altitude);
-            double density=OrbitalMechanics.Density(altitude);
+            double density=referenceBody.atmosphere?OrbitalMechanics.Density(altitude):0;
             var wind=new DVector3(windSpeed,0,0);
             var airVelocity=SurfaceVelocity-wind;
             double speed=airVelocity.Magnitude;
@@ -218,10 +249,13 @@ namespace BRP
             var drag=airVelocity.Normalized*(-dynamicPressure*dragArea);
             foreach(var p in parts.Where(p=>!p.destroyed&&p.definition.liftArea>0))
             {
-                var lateral=new DVector3(-airLocal.x,0,-airLocal.z);
-                var aero=lateral*(density*speed*p.definition.liftArea*.7);
+                var aerodynamicCenter=p.placement.position+p.placement.rotation*Vector3.up*(p.definition.height*.5f);
+                var offset=new DVector3(aerodynamicCenter)-centerOfMass;
+                var surfaceVelocity=airLocal+DVector3.Cross(angularVelocity,offset);
+                var lateral=new DVector3(-surfaceVelocity.x,0,-surfaceVelocity.z);
+                var aero=lateral*(density*surfaceVelocity.Magnitude*p.definition.liftArea*.7);
                 localForce+=aero;
-                localTorque+=DVector3.Cross(new DVector3(p.placement.position)-centerOfMass,aero);
+                localTorque+=DVector3.Cross(offset,aero);
             }
             var command=manualInput;
             bool automatic=guidance!=GuidanceMode.Manual&&Has(PartKind.FlightComputer)&&Powered;
@@ -230,7 +264,11 @@ namespace BRP
                 var up=position.Normalized;
                 var desired=guidance==GuidanceMode.Prograde?velocity.Normalized:guidance==GuidanceMode.Retrograde?-velocity.Normalized:guidance==GuidanceMode.Normal?DVector3.Cross(position,velocity).Normalized:guidance==GuidanceMode.Target&&targetDirection.Magnitude>0?targetDirection.Normalized:up;
                 var desiredLocal=orientation.Inverse.Rotate(desired);
-                command=DVector3.Cross(new DVector3(0,1,0),desiredLocal)*6-angularVelocity*4;
+                var turnAxis=DVector3.Cross(new DVector3(0,1,0),desiredLocal);
+                double alignment=Math.Clamp(desiredLocal.y,-1,1);
+                double turnAngle=Math.Atan2(turnAxis.Magnitude,alignment);
+                if(turnAxis.Magnitude<1e-10&&alignment<0) turnAxis=new DVector3(1,0,0);
+                command=turnAxis.Normalized*(turnAngle*6)-angularVelocity*4;
             }
             double authority=0;
             foreach(var p in parts.Where(p=>!p.destroyed))
@@ -242,9 +280,10 @@ namespace BRP
                 if(k==PartKind.ControlFin) authority+=p.definition.controlTorque*Math.Min(1,dynamicPressure/5000);
                 if(k==PartKind.RcsBlock&&Has(PartKind.ServiceTank)&&Fuel>0)
                 {
-                    double used=Drain(dt*.03*Math.Min(1,command.Magnitude),q=>q.fuel,(q,v)=>q.fuel=v,q=>q.definition.kind==PartKind.ServiceTank);
+                    double needed=dt*.03*Math.Min(1,command.Magnitude);
+                    double used=Drain(needed,q=>q.fuel,(q,v)=>q.fuel=v,q=>q.definition.kind==PartKind.ServiceTank);
                     totalFuelUsed+=used;
-                    if(used>0) authority+=p.definition.controlTorque;
+                    if(used>0) authority+=p.definition.controlTorque*used/needed;
                 }
             }
             var steering=automatic?inertia.Multiply(command)-localTorque+DVector3.Cross(angularVelocity,inertia.Multiply(angularVelocity)):command*authority;
@@ -257,13 +296,14 @@ namespace BRP
             var external=orientation.Rotate(localForce)+drag;
             if(translationInput.Magnitude>0&&Has(PartKind.RcsBlock)&&Has(PartKind.ServiceTank))
             {
-                double used=Drain(dt*.1*translationInput.Magnitude,q=>q.fuel,(q,v)=>q.fuel=v,q=>q.definition.kind==PartKind.ServiceTank);
+                double needed=dt*.1*translationInput.Magnitude;
+                double used=Drain(needed,q=>q.fuel,(q,v)=>q.fuel=v,q=>q.definition.kind==PartKind.ServiceTank);
                 totalFuelUsed+=used;
-                if(used>0) external+=orientation.Rotate(translationInput)*1200;
+                if(used>0) external+=orientation.Rotate(translationInput)*(1200*used/needed);
             }
             maxG=Math.Max(maxG,external.Magnitude/Math.Max(1,mass)/OrbitalMechanics.StandardGravity);
-            var constantAcceleration=external/Math.Max(1,mass);
-            OrbitalMechanics.Integrate(ref position,ref velocity,dt,(r,v)=>OrbitalMechanics.Gravity(r)+constantAcceleration);
+            var constantAcceleration=external/Math.Max(1,(initialMass+mass)*.5);
+            OrbitalMechanics.Integrate(ref position,ref velocity,dt,(r,v)=>referenceBody.Gravity(r)+constantAcceleration);
             heatFlux=1.83e-4*Math.Sqrt(Math.Max(0,density)/Math.Max(.1,maxRadius))*speed*speed*speed;
             double cooling=parts.Where(p=>!p.destroyed).Sum(p=>(double)p.definition.coolingArea);
             double protection=Has(PartKind.HeatShield)?.025:Has(PartKind.Insulation)?.3:Has(PartKind.CargoBay)?.45:1;
@@ -283,23 +323,45 @@ namespace BRP
                 foreach(var p in parts.Where(p=>p.definition.parachuteArea>0)) p.destroyed=true;
                 chuteDeployed=false;lastEvent="Парашют сорван потоком";
             }
+            RefreshMassFrame();
             maxAltitude=Math.Max(maxAltitude,Altitude);maxSpeed=Math.Max(maxSpeed,speed);
-            if(maxAltitude<5&&Altitude<2&&!aborted)
+            if(!IsLunar&&maxAltitude<launchSupportAltitude+3&&Altitude<launchSupportAltitude&&!aborted)
             {
-                var up=position.Normalized;position=up*(OrbitalMechanics.Radius+2);
+                var up=position.Normalized;position=up*(referenceBody.radius+launchSupportAltitude);
                 double vertical=DVector3.Dot(SurfaceVelocity,up);if(vertical<0) velocity-=up*vertical;
             }
-            if(Altitude<0)
+            double contactAltitude=GroundClearance;
+            if(Altitude<contactAltitude)
             {
                 double landingSpeed=SurfaceVelocity.Magnitude;
-                double tolerance=parts.Count(p=>!p.destroyed&&p.definition.kind==PartKind.LandingLeg)>=3?12:8;
-                crashed=landingSpeed>tolerance;landed=!crashed;
-                position=position.Normalized*OrbitalMechanics.Radius;
-                velocity=OrbitalMechanics.AtmosphereVelocity(position);
+                double tolerance=IsLunar?4.5:parts.Count(p=>!p.destroyed&&p.definition.kind==PartKind.LandingLeg)>=3?12:8;
+                crashed=landingSpeed>tolerance||IsLunar&&Tilt>15;landed=!crashed;
+                position=position.Normalized*(referenceBody.radius+contactAltitude);
+                velocity=referenceBody.SurfaceVelocity(position);
                 lastEvent=crashed?$"Удар о поверхность: {landingSpeed:F1} м/с":$"Посадка: {landingSpeed:F1} м/с";
             }
             if(parts.All(p=>p.destroyed)) { crashed=true;lastEvent="Конструкция разрушена"; }
         }
+
+        public double GroundClearance
+        {
+            get
+            {
+                double clearance=.1;
+                var up=position.Normalized;
+                foreach(var part in parts)
+                {
+                    if(part.destroyed) continue;
+                    var axis=orientation.Rotate(new DVector3(part.placement.rotation*Vector3.up));
+                    var center=new DVector3(part.placement.position)-centerOfMass+new DVector3(part.placement.rotation*Vector3.up)*(part.definition.height*.5);
+                    double projection=Math.Clamp(DVector3.Dot(axis,up),-1,1);
+                    double extent=Math.Abs(projection)*part.definition.height*.5+part.definition.radius*Math.Sqrt(Math.Max(0,1-projection*projection));
+                    clearance=Math.Max(clearance,extent-DVector3.Dot(orientation.Rotate(center),up));
+                }
+                return clearance;
+            }
+        }
+        public double GroundAltitude=>Math.Max(0,Altitude-GroundClearance);
 
         public FlightBody Separate(bool payload=false)
         {
@@ -322,7 +384,8 @@ namespace BRP
             position+=shift;velocity+=orientation.Rotate(DVector3.Cross(angularVelocity,centerOfMass-previousCenter));
             var direction=radial?new DVector3(-cut.placement.position.x,0,-cut.placement.position.z).Normalized:new DVector3(0,payload?-1:1,0);
             var impulse=orientation.Rotate(direction)*1500;
-            velocity+=impulse/mass;detached.velocity-=impulse/detached.mass;
+            var releasePoint=position+orientation.Rotate(new DVector3(cut.placement.position)-centerOfMass);
+            ApplyImpulse(impulse,releasePoint);detached.ApplyImpulse(-impulse,releasePoint);
             if(!payload&&!radial) stage=Math.Min(5,stage+1);
             else detached.throttle=0;
             stageEvent=true;payloadReleased|=payload;
@@ -332,6 +395,7 @@ namespace BRP
 
         public bool DeployParachutes()
         {
+            if(!referenceBody.atmosphere) {lastEvent="На Луне нет атмосферы. Используйте посадочный двигатель.";return false;}
             if(!Has(PartKind.MainParachute)&&!Has(PartKind.DrogueParachute)) {lastEvent="Нет парашютной системы";return false;}
             double safeSpeed=Has(PartKind.DrogueParachute)?350:180;
             if(Altitude>5000||SurfaceVelocity.Magnitude>safeSpeed) {lastEvent="Рано раскрывать: ниже 5 км и медленнее "+safeSpeed+" м/с";return false;}
@@ -357,7 +421,8 @@ namespace BRP
             var offset=centerOfMass-previousCenter;
             position+=orientation.Rotate(offset);velocity+=orientation.Rotate(DVector3.Cross(angularVelocity,offset));
             var impulse=orientation.Rotate(new DVector3(0,1,0))*500;
-            velocity+=impulse/mass;carrier.velocity-=impulse/carrier.mass;
+            var releasePoint=position+orientation.Rotate(new DVector3(root.placement.position)-centerOfMass);
+            ApplyImpulse(impulse,releasePoint);carrier.ApplyImpulse(-impulse,releasePoint);
             root.placement.parentId=null;stage=capsule.placement.stage;throttle=0;aborted|=emergency;stageEvent=true;
             guidance=GuidanceMode.Retrograde;
             lastEvent=emergency?"Аварийное отделение капсулы":"Капсула отделена для возвращения";

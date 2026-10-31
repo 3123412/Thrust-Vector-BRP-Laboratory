@@ -6,14 +6,19 @@ namespace BRP
     {
         public double xx, yy, zz, xy, xz, yz;
         public void Add(double mass, DVector3 offset, double radius, double height)
+            => Add(mass,offset,radius,height,new DVector3(0,1,0));
+
+        public void Add(double mass, DVector3 offset, double radius, double height, DVector3 axis)
         {
             double side = mass * (3 * radius * radius + height * height) / 12;
-            xx += side + mass*(offset.y*offset.y+offset.z*offset.z);
-            yy += mass*radius*radius/2 + mass*(offset.x*offset.x+offset.z*offset.z);
-            zz += side + mass*(offset.x*offset.x+offset.y*offset.y);
-            xy -= mass*offset.x*offset.y;
-            xz -= mass*offset.x*offset.z;
-            yz -= mass*offset.y*offset.z;
+            double axialDifference=mass*radius*radius/2-side;
+            axis=axis.Normalized;
+            xx += side + axialDifference*axis.x*axis.x + mass*(offset.y*offset.y+offset.z*offset.z);
+            yy += side + axialDifference*axis.y*axis.y + mass*(offset.x*offset.x+offset.z*offset.z);
+            zz += side + axialDifference*axis.z*axis.z + mass*(offset.x*offset.x+offset.y*offset.y);
+            xy += axialDifference*axis.x*axis.y - mass*offset.x*offset.y;
+            xz += axialDifference*axis.x*axis.z - mass*offset.x*offset.z;
+            yz += axialDifference*axis.y*axis.z - mass*offset.y*offset.z;
         }
         public DVector3 Multiply(DVector3 v) => new DVector3(xx*v.x+xy*v.y+xz*v.z,xy*v.x+yy*v.y+yz*v.z,xz*v.x+yz*v.y+zz*v.z);
         public DVector3 Solve(DVector3 v)

@@ -19,10 +19,10 @@ namespace BRP
         public const double RotationRate = 7.2921159e-5;
         public const double StandardGravity = 9.80665;
 
-        public static DVector3 Gravity(DVector3 position)
+        public static DVector3 Gravity(DVector3 position,double mu=Mu)
         {
             double r = position.Magnitude;
-            return r > 1 ? position * (-Mu / (r * r * r)) : new DVector3();
+            return r > 1 ? position * (-mu / (r * r * r)) : new DVector3();
         }
 
         public static double Density(double altitude)
@@ -58,17 +58,17 @@ namespace BRP
             return 1+.48*rise+supersonic;
         }
 
-        public static OrbitElements Elements(DVector3 position, DVector3 velocity)
+        public static OrbitElements Elements(DVector3 position, DVector3 velocity,double mu=Mu,double radius=Radius)
         {
             double r = position.Magnitude;
             var h = DVector3.Cross(position, velocity);
-            var e = DVector3.Cross(velocity, h) / Mu - position / r;
+            var e = DVector3.Cross(velocity, h) / mu - position / r;
             double eccentricity = e.Magnitude;
-            double energy = velocity.SqrMagnitude / 2 - Mu / r;
-            double a = Math.Abs(energy) > 1e-12 ? -Mu / (2 * energy) : double.PositiveInfinity;
-            double pe = h.SqrMagnitude / Mu / (1 + eccentricity) - Radius;
-            double ap = energy < 0 ? a * (1 + eccentricity) - Radius : double.PositiveInfinity;
-            double period = energy < 0 ? 2 * Math.PI * Math.Sqrt(a * a * a / Mu) : double.PositiveInfinity;
+            double energy = velocity.SqrMagnitude / 2 - mu / r;
+            double a = Math.Abs(energy) > 1e-12 ? -mu / (2 * energy) : double.PositiveInfinity;
+            double pe = h.SqrMagnitude / mu / (1 + eccentricity) - radius;
+            double ap = energy < 0 ? a * (1 + eccentricity) - radius : double.PositiveInfinity;
+            double period = energy < 0 ? 2 * Math.PI * Math.Sqrt(a * a * a / mu) : double.PositiveInfinity;
             double inc = h.Magnitude > 1e-9 ? Math.Acos(Math.Clamp(h.z / h.Magnitude, -1, 1)) * 180 / Math.PI : 0;
             return new OrbitElements(ap, pe, period, inc, eccentricity, a);
         }
