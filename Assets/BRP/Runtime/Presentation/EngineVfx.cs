@@ -11,6 +11,14 @@ namespace BRP
         MaterialPropertyBlock plumeProperties;
         ParticleSystemRenderer plumeRenderer;
         float intensity;
+        public void ConfigureGround(Transform surface)
+        {
+            var main=smoke.main;main.simulationSpace=ParticleSystemSimulationSpace.Custom;main.customSimulationSpace=surface;
+            var collision=smoke.collision;collision.enabled=true;collision.type=ParticleSystemCollisionType.Planes;
+            collision.SetPlane(0,surface);collision.bounce=.02f;collision.dampen=.65f;collision.lifetimeLoss=.1f;collision.radiusScale=1;
+            main=core.main;main.simulationSpace=ParticleSystemSimulationSpace.Local;
+            main=plume.main;main.simulationSpace=ParticleSystemSimulationSpace.Local;
+        }
         public void SetDrive(float power,float atmosphere)
         {
             intensity=Mathf.MoveTowards(intensity,power,Time.unscaledDeltaTime*2.5f);

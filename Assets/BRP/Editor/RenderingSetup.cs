@@ -9,6 +9,15 @@ namespace BRP.Editor
     {
         public static void Configure()
         {
+            var xr=UnityEngine.XR.OpenXR.OpenXRSettings.GetSettingsForBuildTargetGroup(BuildTargetGroup.Standalone);
+            if(xr!=null)
+            {
+                xr.renderMode=UnityEngine.XR.OpenXR.OpenXRSettings.RenderMode.SinglePassInstanced;
+                var profiles=new System.Collections.Generic.HashSet<string>{"OculusTouchControllerProfile","MetaQuestTouchPlusControllerProfile","MetaQuestTouchProControllerProfile","ValveIndexControllerProfile","HTCViveControllerProfile","MicrosoftMotionControllerProfile","HPReverbG2ControllerProfile","KHRSimpleControllerProfile"};
+                foreach(var feature in xr.GetFeatures<UnityEngine.XR.OpenXR.Features.OpenXRFeature>())
+                    if(profiles.Contains(feature.GetType().Name)) {feature.enabled=true;EditorUtility.SetDirty(feature);}
+                EditorUtility.SetDirty(xr);
+            }
             System.IO.Directory.CreateDirectory("Assets/BRP/Rendering");AssetDatabase.Refresh();
             var source=AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>("Assets/Settings/Project Configuration/Quality URP Config.asset");
             var pipelines=new UniversalRenderPipelineAsset[3];

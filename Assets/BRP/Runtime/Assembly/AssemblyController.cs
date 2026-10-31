@@ -212,6 +212,7 @@ namespace BRP
                 var parent=Blueprint.parts.Find(p=>p.instanceId==source.parentId);
                 var center=parent?.position??Vector3.zero;
                 var p=new PlacedPart {partId=source.partId,parentId=source.parentId,port=port,stage=source.stage,color=source.color,position=center+q*(source.position-center),rotation=q*source.rotation};
+                RocketFinish.Copy(source,p);
                 Blueprint.parts.Add(p);var clone=CreateView(view.Definition,p);clone.Attached=true;clone.SetPlacement();
             }
             Changed?.Invoke();

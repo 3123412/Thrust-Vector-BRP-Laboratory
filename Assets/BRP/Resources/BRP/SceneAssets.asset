@@ -12,15 +12,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cf09447181769534ca332de5aa8ef966, type: 3}
   m_Name: SceneAssets
   m_EditorClassIdentifier: Assembly-CSharp::BRP.LabSceneAssets
-  hangar: {fileID: 919132149155446097, guid: 3c184ec00cece8349ace077a938a7116, type: 3}
+  hangar: {fileID: 8372788216131347459, guid: 20159ea85ba9cd649bd49d46a529474f, type: 3}
   workbench: {fileID: 919132149155446097, guid: 8f71f2cf89d78ab4ab492f4fea814bce, type: 3}
-  launchpad: {fileID: 919132149155446097, guid: 82154c03c3862d64db141752050c16de, type: 3}
+  launchpad: {fileID: 7131117228340348036, guid: fd9785de9f81f974ebe5c6d52444b4b8, type: 3}
   teststand: {fileID: 919132149155446097, guid: 3849aa49bf2cf6147bc0597a43ca0813, type: 3}
-  planet: {fileID: 919132149155446097, guid: 27ab23ee75063a743a0866076d72f158, type: 3}
+  planet: {fileID: 6740241325244511098, guid: 2af2ac83e50a4fa4c99468673c371684, type: 3}
   canopy: {fileID: 919132149155446097, guid: 69e7fcb687d80b945b90d33010340499, type: 3}
   xrRig: {fileID: 1717954561962503725, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
   engineEffect: {fileID: 630251929454792723, guid: aee911e3942a4494184624878be5a881, type: 3}
   terrain: {fileID: 919132149155446097, guid: 30d17f3b23600f3469d7b863f0a5f090, type: 3}
+  moon: {fileID: 9221605347794722922, guid: cbaf716ff8e25c3428581ea481e84ac9, type: 3}
+  lunarSurface: {fileID: 8958497819957946915, guid: 1505eec5d7124ea488954ff7a5993c99, type: 3}
+  planetSphere: {fileID: 4746794869361378422, guid: a4d5bdee273b90a4aaffe39d7711a749, type: 3}
+  saturnRings: {fileID: 8438068585996500126, guid: 4f9816a3d0799a14e907de66550cb578, type: 3}
+  moonMaterial: {fileID: 2100000, guid: b5dc3f3822a97e34c930a1f0319d9a2e, type: 2}
   smokeMaterial: {fileID: 2100000, guid: 119f654e0482dd445a43672d1f1ff96a, type: 2}
   flameMaterial: {fileID: 2100000, guid: 792275f2ceb6c5a46a1a786bad1d9119, type: 2}
   sparkMaterial: {fileID: 2100000, guid: e92ac635066d30943a4bc9ae389a36d2, type: 2}

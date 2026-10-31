@@ -101,6 +101,7 @@ namespace BRP.Editor
             var game=systems.AddComponent<LaboratoryGame>();game.mainCamera=camera;
             systems.AddComponent<SelectionFrame>();
             systems.AddComponent<VROperatorControls>().game=game;
+            systems.AddComponent<TutorialDirector>();
             var assembly=systems.AddComponent<AssemblyController>();
             var audio=new GameObject("Audio").AddComponent<SoundEngine>();audio.transform.SetParent(systems.transform);
             audio.effects=AudioSource(audio.transform,"Interface");audio.engine=AudioSource(audio.transform,"Main Engine");audio.engineLow=AudioSource(audio.transform,"Engine Low");
@@ -122,6 +123,7 @@ namespace BRP.Editor
             var monitorTarget=AssetDatabase.LoadAssetAtPath<RenderTexture>(Art+"/Materials/FlightMonitor.renderTexture");
             if(monitorTarget==null) {monitorTarget=new RenderTexture(1600,900,24);AssetDatabase.CreateAsset(monitorTarget,Art+"/Materials/FlightMonitor.renderTexture");}
             var monitorCamera=new GameObject("Flight Monitor Camera").AddComponent<Camera>();monitorCamera.CopyFrom(camera);monitorCamera.cullingMask=1<<29;monitorCamera.targetTexture=monitorTarget;monitorCamera.gameObject.SetActive(false);monitorCamera.gameObject.AddComponent<UniversalAdditionalCameraData>().renderPostProcessing=true;
+            monitorCamera.GetComponent<UniversalAdditionalCameraData>().allowXRRendering=false;
             game.flightCamera=monitorCamera;
             var monitor=new GameObject("Flight Monitor / VR",typeof(RectTransform),typeof(Canvas));
             monitor.transform.SetParent(environment);var monitorCanvas=monitor.GetComponent<Canvas>();monitorCanvas.renderMode=RenderMode.WorldSpace;
@@ -134,6 +136,7 @@ namespace BRP.Editor
             EditorBuildSettings.scenes=new[]{new EditorBuildSettingsScene("Assets/BRP/Scenes/Laboratory.unity",true)};
             SceneView.lastActiveSceneView?.Frame(new Bounds(new Vector3(0,2,0),new Vector3(10,6,10)),false);
             Debug.Log("BRP authored scene saved: environment, editable rocket, UI and effects");
+            WorldUpgradeBuilder.ConfigureAssets();
         }
 
         static void SaveSpaceportScene(LabSceneAssets assets)

@@ -14,8 +14,6 @@ namespace BRP
         [field: SerializeField] public AssemblyController Owner { get; private set; }
         public XRGrabInteractable Grab { get; private set; }
         public Rigidbody Body { get; private set; }
-        Renderer[] renderers;
-        MaterialPropertyBlock properties;
         System.Collections.Generic.List<PartView> heldGroup;
         void Awake()
         {
@@ -54,14 +52,14 @@ namespace BRP
             Grab.throwOnDetach=false;Grab.useDynamicAttach=true;
             Grab.selectEntered.RemoveListener(OnGrab);Grab.selectExited.RemoveListener(OnRelease);
             Grab.selectEntered.AddListener(OnGrab);Grab.selectExited.AddListener(OnRelease);
-            renderers=GetComponentsInChildren<Renderer>();properties=new MaterialPropertyBlock();ApplyColor();
+            ApplyColor();
         }
         void OnGrab(SelectEnterEventArgs args)
         {
             if(Attached)
             {
                 Grab.interactionManager.SelectExit(args.interactorObject,Grab);
-                LaboratoryGame.Instance?.Toast("Сначала разблокируйте деталь кнопкой «Снять»");
+                LaboratoryGame.Instance?.Toast("Сначала нажмите «Разблокировать» в паспорте детали");
                 return;
             }
             LaboratoryGame.Instance?.Select(this);
@@ -108,10 +106,8 @@ namespace BRP
         }
         public void ApplyColor()
         {
-            if(renderers==null) return;
-            properties.SetColor("_BaseColor",Placement.color);
-            foreach(var renderer in renderers)
-                if(renderer.sharedMaterial!=null&&renderer.sharedMaterial.name.Contains("Silver")) renderer.SetPropertyBlock(properties);
+            if(Placement==null||Definition==null) return;
+            RocketFinish.Apply(gameObject,Placement,Definition);
         }
         void Update()
         {

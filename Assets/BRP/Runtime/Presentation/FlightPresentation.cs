@@ -8,6 +8,8 @@ namespace BRP
     {
         public Transform rocketRoot;
         public bool map;
+        public bool immersiveVR;
+        public int mapView;
         public Camera viewCamera;
         public Material lineMaterial;
         readonly Dictionary<string,GameObject> visuals=new Dictionary<string,GameObject>();
@@ -28,8 +30,23 @@ namespace BRP
         TMPro.TextMeshPro apoLabel,periLabel,craftLabel;
         bool cameraManual;
         AerodynamicVfx aerodynamicVfx;
+        Transform groundPlane;
+        LaunchPadVfx launchVfx;
+        CelestialMapPresentation systemMap;
+        DVector3 lunarAnchor;
+        bool lunarAnchorLocked;
+        double lunarAnchorTime;
+        DVector3 landingTerrainAnchor;
+        double landingTerrainTime;
+        bool landingTerrainLocked;
+        const float PlanetDisplayRadius=100000;
+        GameObject companion;
+        public void FocusBody(int index) {if(systemMap!=null) systemMap.Focus(index);}
+        public void SelectMapBody(Ray ray) {if(map&&mapView>0&&systemMap!=null) systemMap.Select(ray);}
+        public void FocusNextPlanet() {if(systemMap!=null) systemMap.NextBody();}
         public void OrbitCamera(Vector2 delta,float zoom)
         {
+            if(map&&mapView>0&&systemMap!=null) {systemMap.Orbit(delta,zoom);return;}
             if(delta.sqrMagnitude>.01f||Mathf.Abs(zoom)>.01f) cameraManual=true;
             if(map)
             {
@@ -48,30 +65,49 @@ namespace BRP
             RenderSettings.fog=false;RenderSettings.skybox=source.skyMaterial;
             viewCamera.farClipPlane=40000000;
             rocketRoot=new GameObject("FlightCraft").transform;rocketRoot.SetParent(transform,false);
+            if(flight.IsLunar)
+            {
+                var lamp=new GameObject("Lunar landing light").AddComponent<Light>();lamp.transform.SetParent(rocketRoot,false);
+                lamp.transform.localPosition=new Vector3(.55f,0,0);lamp.transform.localRotation=Quaternion.Euler(90,0,0);
+                lamp.type=LightType.Spot;lamp.spotAngle=75;lamp.range=45;lamp.intensity=12;lamp.color=new Color(1,.93f,.8f);lamp.cullingMask=1<<29;lamp.shadows=LightShadows.None;
+            }
+            groundPlane=new GameObject("Exhaust collision surface").transform;groundPlane.SetParent(transform,false);
             foreach(var part in flight.parts)
             {
                 var model=Instantiate(part.definition.model,rocketRoot);
                 model.transform.localPosition=part.placement.position;
                 model.transform.localRotation=part.placement.rotation*(part.definition.surface?Quaternion.Euler(0,180,0):Quaternion.identity);
+                RocketFinish.Apply(model,part.placement,part.definition,source.font);
                 visuals[part.placement.instanceId]=model;
                 if(part.definition.IsEngine && source.engineEffect!=null)
                 {
                     var effect=Instantiate(source.engineEffect,model.transform).GetComponent<EngineVfx>();
                     effect.transform.localPosition=Vector3.zero;effect.transform.localRotation=Quaternion.identity;
+                    effect.ConfigureGround(groundPlane);
                     exhausts[part.placement.instanceId]=effect;
                 }
             }
             pad=Instantiate(source.launchpad,transform);pad.transform.localScale=Vector3.one*ViewScale;
+            var cloud=new GameObject("Launch surface effects");cloud.layer=29;cloud.transform.SetParent(groundPlane,false);
+            launchVfx=cloud.AddComponent<LaunchPadVfx>();launchVfx.Initialize(source.smokeMaterial,groundPlane,flight.IsLunar);
             float height=1,radius=.3f;
             foreach(var part in flight.parts) {height=Mathf.Max(height,part.placement.position.y+part.definition.height);radius=Mathf.Max(radius,part.definition.radius);}
             aerodynamicVfx=rocketRoot.gameObject.AddComponent<AerodynamicVfx>();aerodynamicVfx.Initialize(source.smokeMaterial,radius,height);
-            if(source.terrain!=null)
+            var terrainSource=flight.IsLunar?source.lunarSurface:source.terrain;
+            if(terrainSource!=null)
             {
                 terrain=new GameObject("Launch terrain");terrain.transform.SetParent(transform,false);
-                Instantiate(source.terrain,terrain.transform);terrain.transform.localScale=Vector3.one*ViewScale*4;
+                Instantiate(terrainSource,terrain.transform);terrain.transform.localScale=Vector3.one*ViewScale*(flight.IsLunar?3:4);
             }
-            planet=new GameObject("Earth");planet.transform.SetParent(transform,false);Instantiate(source.planet,planet.transform);
-            foreach(var renderer in planet.GetComponentsInChildren<Renderer>()) renderer.sharedMaterial=source.planetMaterial;
+            planet=new GameObject(flight.referenceBody.name);planet.transform.SetParent(transform,false);Instantiate(source.planet,planet.transform);
+            foreach(var renderer in planet.GetComponentsInChildren<Renderer>()) renderer.sharedMaterial=flight.IsLunar&&source.moonMaterial!=null?source.moonMaterial:source.planetMaterial;
+            lunarAnchor=flight.position.Normalized*flight.referenceBody.radius;
+            var companionSource=flight.IsLunar?source.planet:source.moon;
+            if(companionSource!=null)
+            {
+                companion=new GameObject(flight.IsLunar?"Earth in lunar sky":"Moon in Earth sky");companion.transform.SetParent(transform,false);Instantiate(companionSource,companion.transform);
+                foreach(var renderer in companion.GetComponentsInChildren<Renderer>()) renderer.sharedMaterial=flight.IsLunar?source.planetMaterial:source.moonMaterial;
+            }
             if(source.canopy!=null)
             {
                 canopy=Instantiate(source.canopy,rocketRoot);canopy.transform.localPosition=Vector3.up*8;canopy.SetActive(false);
@@ -80,8 +116,9 @@ namespace BRP
             trail=CreateLine("FlightPath",new Color(.75f,.8f,.8f,.4f),.035f);
             targetLine=CreateLine("TargetVector",UiTheme.Orange,.025f);
             apoLabel=MapLabel("Ap",UiTheme.Cyan);periLabel=MapLabel("Pe",UiTheme.Cyan);craftLabel=MapLabel("БРП",UiTheme.Orange);
+            systemMap=new GameObject("Celestial navigation map").AddComponent<CelestialMapPresentation>();systemMap.transform.SetParent(transform,false);systemMap.Initialize(source);
             SetFlightLayer(transform);
-            viewCamera.transform.position=new Vector3(12,6,-18);viewCamera.transform.LookAt(Vector3.zero);
+            if(!immersiveVR) {viewCamera.transform.position=new Vector3(12,6,-18);viewCamera.transform.LookAt(Vector3.zero);}
             Refresh(flight,null);
         }
 
@@ -107,6 +144,7 @@ namespace BRP
                 var model=Instantiate(part.definition.model,rocketRoot);visuals[part.placement.instanceId]=model;
                 model.transform.localPosition=part.placement.position;
                 model.transform.localRotation=part.placement.rotation*(part.definition.surface?Quaternion.Euler(0,180,0):Quaternion.identity);
+                RocketFinish.Apply(model,part.placement,part.definition,assets.font);
                 SetFlightLayer(model.transform);
             }
             foreach(var entry in visuals)
@@ -115,9 +153,11 @@ namespace BRP
                 bool visible=state!=null&&!state.destroyed;
                 if(entry.Value.activeSelf!=visible) entry.Value.SetActive(visible);
             }
-            float atmosphere=(float)Math.Clamp(OrbitalMechanics.Density(flight.Altitude)/1.225,0,1);
+            float atmosphere=flight.referenceBody.atmosphere?(float)Math.Clamp(OrbitalMechanics.Density(flight.Altitude)/1.225,0,1):0;
             aerodynamicVfx.Refresh(flight,!map&&!flight.landed&&!flight.crashed);
-            assets.skyMaterial.SetFloat("_Atmosphere",map?0:Mathf.Exp(-(float)Math.Max(0,flight.Altitude)/26000));
+            assets.skyMaterial.SetFloat("_Atmosphere",map||!flight.referenceBody.atmosphere?0:Mathf.Exp(-(float)Math.Max(0,flight.Altitude)/26000));
+            assets.skyMaterial.SetFloat("_SunVisibility",map&&mapView>0?0:1);
+            launchVfx.Refresh(flight,!map&&!flight.landed&&!flight.crashed);
             foreach(var part in flight.parts)
             {
                 if(exhausts.TryGetValue(part.placement.instanceId,out var effect))
@@ -134,14 +174,31 @@ namespace BRP
                 if(capsule!=null) canopy.transform.localPosition=capsule.placement.position+Vector3.up*(capsule.definition.height+3);
             }
             apoLabel.gameObject.SetActive(map);periLabel.gameObject.SetActive(map);craftLabel.gameObject.SetActive(map);
-            if(map) UpdateMap(flight,target);else UpdateChase(flight,target);
+            bool overview=map&&mapView>0;
+            if(companion!=null) companion.SetActive(!map);
+            systemMap.gameObject.SetActive(overview);
+            if(overview)
+            {
+                planet.SetActive(false);pad.SetActive(false);if(terrain!=null) terrain.SetActive(false);rocketRoot.gameObject.SetActive(false);
+                if(targetVisual!=null) targetVisual.SetActive(false);
+                orbitLine.positionCount=trail.positionCount=targetLine.positionCount=0;
+                apoLabel.gameObject.SetActive(false);periLabel.gameObject.SetActive(false);craftLabel.gameObject.SetActive(false);
+                systemMap.Refresh(viewCamera,flight,mapView);
+            }
+            else
+            {
+                rocketRoot.gameObject.SetActive(true);
+                if(map) UpdateMap(flight,target);else UpdateChase(flight,target);
+            }
             previousMap=map;
         }
 
         void UpdateMap(FlightBody flight,FlightBody target)
         {
-            float scale=50f/(float)OrbitalMechanics.Radius;
+            viewCamera.farClipPlane=10000;
+            float scale=50f/(float)flight.referenceBody.radius;
             planet.transform.localPosition=Vector3.zero;planet.transform.localScale=Vector3.one*50;
+            planet.transform.rotation=Quaternion.AngleAxis((float)(flight.elapsed*flight.referenceBody.rotationRate*180/Math.PI),Vector3.forward)*Quaternion.Euler(90,0,0);
             planet.SetActive(true);if(terrain!=null) terrain.SetActive(false);
             rocketRoot.localPosition=flight.position.Float*scale;
             rocketRoot.localScale=Vector3.one*.14f;rocketRoot.rotation=flight.orientation.Float;
@@ -165,7 +222,7 @@ namespace BRP
                     points[i]=r.Float*scale;
                     if(r.Magnitude>highest) {highest=r.Magnitude;apo=points[i];}
                     if(r.Magnitude<lowest) {lowest=r.Magnitude;peri=points[i];}
-                    OrbitalMechanics.Integrate(ref r,ref v,step,(p,s)=>OrbitalMechanics.Gravity(p));
+                    OrbitalMechanics.Integrate(ref r,ref v,step,(p,s)=>flight.referenceBody.Gravity(p));
                 }
                 orbitLine.positionCount=points.Length;orbitLine.SetPositions(points);
                 apoLabel.transform.position=apo+Vector3.up*2;periLabel.transform.position=peri+Vector3.up*2;
@@ -176,27 +233,68 @@ namespace BRP
 
         void UpdateChase(FlightBody flight,FlightBody target)
         {
+            viewCamera.farClipPlane=1000000;
             rocketRoot.localScale=Vector3.one*ViewScale;
             rocketRoot.rotation=flight.orientation.Float;
             rocketRoot.localPosition=-(rocketRoot.rotation*flight.centerOfMass.Float)*ViewScale;
-            planet.transform.localScale=Vector3.one*(float)OrbitalMechanics.Radius*ViewScale;
-            planet.transform.localPosition=-flight.position.Float*ViewScale;
+            planet.transform.localScale=Vector3.one*PlanetDisplayRadius;
+            planet.transform.localPosition=-flight.position.Normalized.Float*(float)(PlanetDisplayRadius*(1+flight.Altitude/flight.referenceBody.radius));
             double a=flight.elapsed*OrbitalMechanics.RotationRate;
             var padPosition=new DVector3(-Math.Sin(a)*OrbitalMechanics.Radius,Math.Cos(a)*OrbitalMechanics.Radius,0);
             pad.transform.localPosition=(padPosition-flight.position).Float*ViewScale;
             pad.transform.localRotation=Quaternion.Euler(0,0,(float)(a*180/Math.PI));
-            pad.SetActive(flight.Altitude<2500);
-            planet.SetActive(flight.Altitude>8000);
-            if(terrain!=null) {terrain.SetActive(flight.Altitude<12000);terrain.transform.localPosition=pad.transform.localPosition;terrain.transform.localRotation=pad.transform.localRotation;}
+            pad.SetActive(!flight.IsLunar&&flight.Altitude<2500);
+            planet.transform.rotation=Quaternion.AngleAxis((float)(flight.elapsed*flight.referenceBody.rotationRate*180/Math.PI),Vector3.forward)*Quaternion.Euler(90,0,0);
+            double horizonClearance=Math.Max(100,flight.GroundClearance*flight.referenceBody.radius/PlanetDisplayRadius*ViewScale*1.5);
+            planet.SetActive(flight.Altitude>horizonClearance);
+            if(companion!=null)
+            {
+                var destination=flight.IsLunar?-CelestialBody.MoonPosition(flight.elapsed):CelestialBody.MoonPosition(flight.elapsed);
+                var relative=destination-flight.position;var direction=relative.Normalized;
+                double projection=DVector3.Dot(flight.position,direction);
+                bool occulted=projection<0&&projection*projection>flight.position.SqrMagnitude-flight.referenceBody.radius*flight.referenceBody.radius;
+                companion.SetActive(!occulted);
+                companion.transform.localPosition=direction.Float*8000;
+                companion.transform.localScale=Vector3.one*(float)(8000*(flight.IsLunar?CelestialBody.Earth.radius:CelestialBody.Moon.radius)/relative.Magnitude);
+            }
+            var radial=flight.position.Normalized.Float;
+            bool nearLaunch=!flight.IsLunar&&(padPosition-flight.position).Magnitude<2500;
+            groundPlane.SetPositionAndRotation(!nearLaunch?-radial*(float)flight.Altitude*ViewScale:pad.transform.position+pad.transform.up*1.45f*ViewScale,!nearLaunch?Quaternion.FromToRotation(Vector3.up,radial):pad.transform.rotation);
+            if(terrain!=null)
+            {
+                terrain.SetActive(flight.Altitude<12000);
+                if(flight.IsLunar)
+                {
+                    if(!lunarAnchorLocked) {lunarAnchor=flight.position.Normalized*flight.referenceBody.radius;lunarAnchorTime=flight.elapsed;if(flight.Altitude<12000) lunarAnchorLocked=true;}
+                    double angle=(flight.elapsed-lunarAnchorTime)*flight.referenceBody.rotationRate;
+                    var anchor=new DVector3(lunarAnchor.x*Math.Cos(angle)-lunarAnchor.y*Math.Sin(angle),lunarAnchor.x*Math.Sin(angle)+lunarAnchor.y*Math.Cos(angle),lunarAnchor.z);
+                    terrain.transform.localPosition=(anchor-flight.position).Float*ViewScale;terrain.transform.localRotation=Quaternion.FromToRotation(Vector3.up,anchor.Normalized.Float);
+                }
+                else
+                {
+                    double downrange=(padPosition-flight.position.Normalized*OrbitalMechanics.Radius).Magnitude;
+                    if(downrange>2000&&flight.VerticalSpeed<0&&flight.Altitude<12000)
+                    {
+                        if(!landingTerrainLocked) {landingTerrainAnchor=flight.position.Normalized*OrbitalMechanics.Radius;landingTerrainTime=flight.elapsed;landingTerrainLocked=true;}
+                        double angle=(flight.elapsed-landingTerrainTime)*OrbitalMechanics.RotationRate;
+                        var anchor=new DVector3(landingTerrainAnchor.x*Math.Cos(angle)-landingTerrainAnchor.y*Math.Sin(angle),landingTerrainAnchor.x*Math.Sin(angle)+landingTerrainAnchor.y*Math.Cos(angle),landingTerrainAnchor.z);
+                        terrain.transform.localPosition=(anchor-flight.position).Float*ViewScale;terrain.transform.localRotation=Quaternion.FromToRotation(Vector3.up,anchor.Normalized.Float);
+                    }
+                    else {terrain.transform.localPosition=pad.transform.localPosition;terrain.transform.localRotation=pad.transform.localRotation;}
+                }
+            }
             orbitLine.positionCount=0;
             float lower=float.PositiveInfinity,upper=float.NegativeInfinity;
             foreach(var part in flight.parts) if(!part.destroyed) {lower=Mathf.Min(lower,part.placement.position.y);upper=Mathf.Max(upper,part.placement.position.y+part.definition.height);}
             var center=rocketRoot.TransformPoint(new Vector3(0,(lower+upper)*.5f,0));
             if(!cameraManual) cameraDistance=Mathf.Clamp((upper-lower)*ViewScale*2.4f,9,45);
             var desired=center+Quaternion.Euler(-cameraPitch,cameraYaw,0)*Vector3.forward*cameraDistance;
-            if(previousMap) viewCamera.transform.position=desired;
-            viewCamera.transform.position=Vector3.SmoothDamp(viewCamera.transform.position,desired,ref cameraVelocity,.55f);
-            viewCamera.transform.LookAt(center);
+            if(!immersiveVR)
+            {
+                if(previousMap) viewCamera.transform.position=desired;
+                viewCamera.transform.position=Vector3.SmoothDamp(viewCamera.transform.position,desired,ref cameraVelocity,.55f);
+                viewCamera.transform.LookAt(center);
+            }
             trailTime+=Time.unscaledDeltaTime;
             if(trailTime>.3f)
             {
@@ -220,6 +318,7 @@ namespace BRP
                 {
                     var model=Instantiate(part.definition.model,targetVisual.transform);
                     model.transform.localPosition=part.placement.position-target.centerOfMass.Float;model.transform.localRotation=part.placement.rotation;
+                    RocketFinish.Apply(model,part.placement,part.definition,assets.font);
                 }
                 SetFlightLayer(targetVisual.transform);
             }
@@ -247,10 +346,11 @@ namespace BRP
                         var model=Instantiate(part.definition.model,root);
                         model.transform.localPosition=part.placement.position-body.centerOfMass.Float;
                         model.transform.localRotation=part.placement.rotation*(part.definition.surface?Quaternion.Euler(0,180,0):Quaternion.identity);
+                        RocketFinish.Apply(model,part.placement,part.definition,assets.font);
                     }
                     SetFlightLayer(root);
                 }
-                root.gameObject.SetActive(!body.crashed);
+                root.gameObject.SetActive(!body.crashed&&(!map||mapView==0));
                 root.rotation=body.orientation.Float;
                 root.localScale=Vector3.one*(map?.08f:ViewScale);
                 root.localPosition=map?body.position.Float*(50f/(float)OrbitalMechanics.Radius):(body.position-flight.position).Float*ViewScale;

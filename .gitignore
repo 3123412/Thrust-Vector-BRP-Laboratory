@@ -24,3 +24,5 @@ Artifacts/
 Thumbs.db
 Tools/.packages/
 .cache/
+__pycache__/
+*.py[cod]

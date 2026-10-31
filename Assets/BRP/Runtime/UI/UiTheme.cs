@@ -44,7 +44,7 @@ namespace BRP
             r.gameObject.AddComponent<LabButton>();
             var colors=button.colors;colors.normalColor=Color.white;colors.highlightedColor=new Color(.75f,.9f,.95f);colors.pressedColor=new Color(.5f,.65f,.72f);colors.disabledColor=new Color(.35f,.4f,.44f);button.colors=colors;
             if(action!=null) button.onClick.AddListener(action);
-            var label=Text(r,text,6,0,w-12,h,w<90?12:17,primary?Ink:TextColor);label.alignment=TextAlignmentOptions.Midline;
+            var label=Text(r,text,6,0,w-12,h,w<90?15:19,primary?Ink:TextColor);label.alignment=TextAlignmentOptions.Midline;
             return button;
         }
         public static UnityEngine.UI.Button Command(Transform parent,string text,float x,float y,float w,float h,string command,int argument=0,bool primary=false)
@@ -60,7 +60,10 @@ namespace BRP
             var root=Rect("Volume",parent,x,y,width,height);
             var track=Panel("Track",root,0,height*.5f-2,width,4,new Color(.16f,.22f,.24f));
             var fill=Panel("Fill",track,0,0,width,4,Cyan);
-            var handle=Panel("Handle",root,0,0,12,height,TextColor);
+            fill.anchorMin=Vector2.zero;fill.anchorMax=Vector2.one;fill.offsetMin=fill.offsetMax=Vector2.zero;
+            var handleArea=Rect("Handle Area",root,6,0,width-12,height);
+            var handle=Panel("Handle",handleArea,0,0,12,height,TextColor);
+            handle.pivot=new Vector2(.5f,.5f);handle.anchoredPosition=Vector2.zero;handle.sizeDelta=new Vector2(12,0);
             var slider=root.gameObject.AddComponent<UnityEngine.UI.Slider>();slider.fillRect=fill;slider.handleRect=handle;
             slider.targetGraphic=handle.GetComponent<UnityEngine.UI.Image>();slider.minValue=0;slider.maxValue=1;slider.value=value;
             return slider;
