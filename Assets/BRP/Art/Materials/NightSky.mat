@@ -26,6 +26,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _Atmosphere: 1
+    - _SunVisibility: 1
     m_Colors:
     - _Horizon: {r: 0.035, g: 0.06999998, b: 0.09999997, a: 1}
   m_BuildTextureStacks: []

@@ -1,0 +1,85 @@
+[
+  {
+    "id": "booster_engine",
+    "boundaryEdges": 0,
+    "nonmanifoldEdges": 0,
+    "negativeVolumeGroups": 0,
+    "signedVolumes": [
+      0.007377268138250273,
+      0.011463106460617017,
+      0.009691194066063693,
+      0.027175868569494985
+    ],
+    "axialRayHits": []
+  },
+  {
+    "id": "vacuum_engine",
+    "boundaryEdges": 0,
+    "nonmanifoldEdges": 0,
+    "negativeVolumeGroups": 0,
+    "signedVolumes": [
+      0.006937333141581682,
+      0.00936941687993768,
+      0.004845749702090349,
+      0.02735694760996339
+    ],
+    "axialRayHits": []
+  },
+  {
+    "id": "first_stage",
+    "boundaryEdges": 0,
+    "nonmanifoldEdges": 0,
+    "negativeVolumeGroups": 0,
+    "signedVolumes": [
+      1.124695532279581,
+      0.0012174101882976905,
+      0.0003113647265370547
+    ]
+  },
+  {
+    "id": "capsule",
+    "boundaryEdges": 0,
+    "nonmanifoldEdges": 0,
+    "negativeVolumeGroups": 0,
+    "signedVolumes": [
+      0.30064793698558306,
+      0.00312192644699027,
+      0.006903164362687528,
+      0.00014668592440427678
+    ]
+  },
+  {
+    "id": "heat_shield",
+    "boundaryEdges": 0,
+    "nonmanifoldEdges": 0,
+    "negativeVolumeGroups": 0,
+    "signedVolumes": [
+      0.09606156918148849,
+      0.005173861262420258,
+      0.008779373745016028
+    ]
+  },
+  {
+    "id": "landing_leg",
+    "boundaryEdges": 0,
+    "nonmanifoldEdges": 0,
+    "negativeVolumeGroups": 0,
+    "signedVolumes": [
+      0.003978999422557265,
+      0.0043219102394995166,
+      0.000665178549270438,
+      0.001529507426448422
+    ]
+  },
+  {
+    "id": "docking_port",
+    "boundaryEdges": 0,
+    "nonmanifoldEdges": 0,
+    "negativeVolumeGroups": 0,
+    "signedVolumes": [
+      0.03600537393075945,
+      0.005171879830540996,
+      1.5737092289195175e-05
+    ]
+  }
+]

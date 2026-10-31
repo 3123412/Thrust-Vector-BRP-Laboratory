@@ -8,6 +8,12 @@ namespace BRP.Editor
 {
     public static class ModelOptimization
     {
+        public static string SourcePath(string partId)
+        {
+            string hero="Assets/BRP/Art/HeroV4/"+partId+".fbx";
+            return File.Exists(hero)?hero:"Assets/BRP/Art/Models/"+partId+".fbx";
+        }
+
         public static void Build(PartCatalog catalog)
         {
             const string folder="Assets/BRP/Art/Optimized";
@@ -15,7 +21,7 @@ namespace BRP.Editor
             int before=0,after=0;
             foreach(var definition in catalog.parts)
             {
-                var source=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/BRP/Art/Models/"+definition.id+".fbx");
+                var source=AssetDatabase.LoadAssetAtPath<GameObject>(SourcePath(definition.id));
                 if(source==null) throw new FileNotFoundException(definition.id);
                 var groups=new Dictionary<Material,List<CombineInstance>>();
                 foreach(var filter in source.GetComponentsInChildren<MeshFilter>())

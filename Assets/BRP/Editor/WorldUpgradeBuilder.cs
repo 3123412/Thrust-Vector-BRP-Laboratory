@@ -33,10 +33,11 @@ namespace BRP.Editor
             var moonMaterial=Material("BRP_Moon_V3",Color.white,0,.05f,"Moon_Albedo_V3");
             Material("BRP_LunarSoil_V3",new Color(.65f,.64f,.61f),0,0,"Lunar_Regolith_V3");
             Material("BRP_LunarRock_V3",new Color(.45f,.44f,.42f),0,0,"Lunar_Regolith_V3");
-            foreach(string id in new[]{"studio_hangar_v3","spaceport_v3","moon_v3","lunar_surface_v3","planet_sphere_v3","ring_saturn_v3"}) ConfigureModel(id);
+            foreach(string id in new[]{"studio_hangar_v3","spaceport_v3","moon_v3","lunar_surface_v3","planet_sphere_v3","ring_saturn_v3","earth_sphere_hd"}) ConfigureModel(id);
             var assets=Resources.Load<LabSceneAssets>("BRP/SceneAssets");
             if(assets==null) throw new FileNotFoundException("BRP/SceneAssets");
             assets.hangar=Wrap("Hangar",LoadModel("studio_hangar_v3"));
+            assets.planet=Wrap("Earth",LoadModel("earth_sphere_hd"));
             assets.launchpad=Wrap("Spaceport",LoadModel("spaceport_v3"));
             assets.moon=Wrap("Moon",LoadModel("moon_v3"));assets.moonMaterial=moonMaterial;
             assets.lunarSurface=Wrap("LunarSurface",LoadModel("lunar_surface_v3"));
