@@ -1,0 +1,16 @@
+Инструктор BRP — мужской нейроголос Aidar
+
+Источник модели: Silero Models, snakers4/Silero Team.
+Модель: v5_6_ru, голос aidar.
+Репозиторий: https://github.com/snakers4/silero-models
+Модель: https://models.silero.ai/models/tts/ru/v5_6_ru.pt
+Лицензия: Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International. Полный текст находится рядом в LICENSE_CC_BY_NC_SA_4.txt.
+
+Оригинальные реплики проекта: Tools/tutorial_voice_ru.json и описания модулей parts.json.
+Синтезировано офлайн 31 октября 2026 года, Tools/generate_offline_tutorial_audio.py.
+Обработка: разделение на смысловые фразы, паузы, обрезка краевой тишины, highpass65Hz, -18LUFS/truepeak-3dB, mono PCM24kHz.
+Весь набор озвучен одним мужским голосом; женские фонограммы и изменение их высоты не использованы.
+
+Готовые записи и внесённая обработка распространяются с атрибуцией Silero Team под CC BY-NC-SA4.0 для некоммерческого учебного проекта.
+«Поехали!» произносит инструктор; это не архивная запись и не имитация Юрия Гагарина.
+Модель и PyTorch в игру и публичный архив исходников не включаются.

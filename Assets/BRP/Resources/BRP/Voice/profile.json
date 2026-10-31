@@ -1,0 +1,20 @@
+{
+  "utc": "2026-10-31T03:20:30.635819+00:00",
+  "voice": "silero-v5_6_ru/aidar",
+  "provider": "Silero",
+  "speaker": "aidar",
+  "gender": "Male",
+  "sample_rate": 24000,
+  "channels": 1,
+  "rate": "native",
+  "pitch": "native",
+  "loudness_lufs": -18,
+  "true_peak_db": -3,
+  "license": "CC-BY-NC-SA-4.0",
+  "model_sha256": "04cc9b1d08ce38bcaa9d02c488d80d3e6806d17f7eaa7c95982f36a3cbf50b2e",
+  "clips": 98,
+  "voice_seconds": 1003.73,
+  "all_verified": true,
+  "female_source_reused": false,
+  "old_voice_hash_matches": 0
+}

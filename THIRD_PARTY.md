@@ -9,3 +9,7 @@
 Текстура Земли: [Solar System Scope](https://www.solarsystemscope.com/textures/), CC BY 4.0. Карта основана на данных NASA Blue Marble.
 
 Шрифт Inter и ресурсы VR Template поставляются с исходными лицензиями Unity-шаблона. Пакеты Unity сохраняют свои лицензии.
+
+Голос инструктора: Silero Models V5.6 RU, Aidar, [Silero Team](https://github.com/snakers4/silero-models). Записи и обработка распространяются под CC BY-NC-SA 4.0 для некоммерческого учебного проекта. Полная лицензия и происхождение находятся в Assets/BRP/Resources/BRP/Voice. Модель и PyTorch в сборку и архив исходников не входят.
+
+Фоновая музыка Orbital Night создана для BRP без сторонних семплов. Генератор: Tools/generate_background_music.py.
