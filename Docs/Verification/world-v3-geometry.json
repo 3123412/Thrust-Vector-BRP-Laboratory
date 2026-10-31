@@ -1,0 +1,25 @@
+{
+  "hangar": {
+    "objects": 19,
+    "boundaryEdges": 0
+  },
+  "moon": {
+    "objects": 1,
+    "boundaryEdges": 0
+  },
+  "lunar": {
+    "objects": 37,
+    "boundaryEdges": 640
+  },
+  "landingCenter": {
+    "vertices": 49,
+    "heightRange": [
+      -0.0,
+      -0.0
+    ]
+  },
+  "moonRadius": [
+    0.9942917680792791,
+    1.0036575810936448
+  ]
+}

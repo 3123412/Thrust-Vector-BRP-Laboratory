@@ -1,17 +1,17 @@
 {
-    "utc": "2026-10-30T05:38:31.4643442Z",
+    "utc": "2026-10-31T09:54:53.9681984Z",
     "passed": 9,
     "failed": 0,
     "checks": [
         {
             "name": "orbital launcher reaches orbit",
             "passed": true,
-            "details": "422,18s / 121686–231848m"
+            "details": "422,18s / 120815–231006m"
         },
         {
             "name": "complete launch, satellite and capsule recovery",
             "passed": true,
-            "details": "Посадка: 5,3 м/с; satellite telemetry 180,0s; flight 3601,6s"
+            "details": "Посадка: 5,3 м/с; satellite telemetry 180,0s; flight 3593,2s"
         },
         {
             "name": "emergency tower recovers a capsule",

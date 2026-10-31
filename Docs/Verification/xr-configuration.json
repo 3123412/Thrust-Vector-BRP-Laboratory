@@ -1,0 +1,15 @@
+{
+  "utc": "2026-10-31T10:09:27.5295706Z",
+  "renderMode": "SinglePassInstanced",
+  "profiles": [
+    "HPReverbG2ControllerProfile",
+    "HTCViveControllerProfile",
+    "KHRSimpleControllerProfile",
+    "MetaQuestTouchPlusControllerProfile",
+    "MetaQuestTouchProControllerProfile",
+    "MicrosoftMotionControllerProfile",
+    "OculusTouchControllerProfile",
+    "ValveIndexControllerProfile"
+  ],
+  "hardwareTested": false
+}

@@ -1,0 +1,701 @@
+{
+  "voice": "silero-v5_6_ru/aidar",
+  "gender": "Male",
+  "passed": 99,
+  "failed": 0,
+  "old_voice_hash_matches": 0,
+  "clips": [
+    {
+      "id": "intro",
+      "duration": 15.333,
+      "rms": 0.1091,
+      "sha256": "ab42cb64d52d0ba3f3bc2a1138eb8e7045a1f74d7640af2078f212bdf89e81bc",
+      "caption_segments": 6
+    },
+    {
+      "id": "controls_pc",
+      "duration": 15.824,
+      "rms": 0.1092,
+      "sha256": "bed901aff21996075d64ddfb3454930df068a5e4f890159b7670685815d4b1d2",
+      "caption_segments": 4
+    },
+    {
+      "id": "controls_vr",
+      "duration": 20.357,
+      "rms": 0.1078,
+      "sha256": "b6574fb8604825ba598ffffda9d3de8fa2fa0e44a9610d25b7ae833616a6530e",
+      "caption_segments": 5
+    },
+    {
+      "id": "clear",
+      "duration": 10.36,
+      "rms": 0.1029,
+      "sha256": "44d9f96c2252e25102191e5eab052b719710c54ccef64ccbd61e888a1042bd4c",
+      "caption_segments": 4
+    },
+    {
+      "id": "first_stage",
+      "duration": 12.112,
+      "rms": 0.1094,
+      "sha256": "0edea46c8be1da692f43f8623ee0e1ed48310bfa1cd67f746d4f04bfdb391b51",
+      "caption_segments": 4
+    },
+    {
+      "id": "engine",
+      "duration": 11.892,
+      "rms": 0.1107,
+      "sha256": "4ffd0b7ea0b2c75cb01b688ab980e710a5c9630644b9d38bd5b859fdde79ea80",
+      "caption_segments": 4
+    },
+    {
+      "id": "fairing",
+      "duration": 12.735,
+      "rms": 0.1075,
+      "sha256": "423c728e808cff897f5f63c769e69354877d83497c48805e226d09ecddcfcbec",
+      "caption_segments": 4
+    },
+    {
+      "id": "detach",
+      "duration": 12.622,
+      "rms": 0.109,
+      "sha256": "ee2657d0999897c89f7e94868a321869e279797393afbb747ec6bb6249099620",
+      "caption_segments": 4
+    },
+    {
+      "id": "reattach",
+      "duration": 10.665,
+      "rms": 0.1101,
+      "sha256": "4656299af0f823e843db882b4b54474cba22d707cbb3552a57cc5f4ce8a3f14f",
+      "caption_segments": 4
+    },
+    {
+      "id": "launch",
+      "duration": 12.669,
+      "rms": 0.1068,
+      "sha256": "3397eef59bf6011726606976d3a67e6667d35983f0c1d2f82980664034e240a2",
+      "caption_segments": 6
+    },
+    {
+      "id": "stand",
+      "duration": 11.132,
+      "rms": 0.1085,
+      "sha256": "31e9fceb4f7afe0d9d23be5ca1828420cd33dc8417c064fe7e4a3da8f550a2f6",
+      "caption_segments": 4
+    },
+    {
+      "id": "throttle_pc",
+      "duration": 13.438,
+      "rms": 0.1102,
+      "sha256": "45693e4056c089dbefb55c647b6de33a2ae560af39c862a6976d750bd965c37a",
+      "caption_segments": 4
+    },
+    {
+      "id": "throttle_vr",
+      "duration": 12.853,
+      "rms": 0.1089,
+      "sha256": "af6c11878dc5ecbe69f139e72a7cfbb44fb3f95dd7184ead0c80200f10d63ffc",
+      "caption_segments": 3
+    },
+    {
+      "id": "staging_pc",
+      "duration": 8.724,
+      "rms": 0.107,
+      "sha256": "ecefcf3b633e73aa1123532d5468168ce9d2429318c434ec20cf7b29d089825b",
+      "caption_segments": 2
+    },
+    {
+      "id": "staging_vr",
+      "duration": 11.055,
+      "rms": 0.1093,
+      "sha256": "59eb2375aab11f4b30ee036ba511a3e8e197231e6cb4d81609d7fca0ce82019f",
+      "caption_segments": 2
+    },
+    {
+      "id": "orientation_pc",
+      "duration": 11.826,
+      "rms": 0.1079,
+      "sha256": "04493bb08f3f95909b9e9ec58d676b523d34d5657a9cf8810bdc1c214e265581",
+      "caption_segments": 2
+    },
+    {
+      "id": "orientation_vr",
+      "duration": 12.503,
+      "rms": 0.1101,
+      "sha256": "fc68b6fddce919b6fc65ecbbacc4610eb03293b491a1131ebc39272eba0068a6",
+      "caption_segments": 3
+    },
+    {
+      "id": "payload",
+      "duration": 9.516,
+      "rms": 0.1099,
+      "sha256": "db5ff287bd50350b20942b4450163f8c0fff1a1c27fc4daa5e0253107888185c",
+      "caption_segments": 3
+    },
+    {
+      "id": "orbit",
+      "duration": 17.599,
+      "rms": 0.1041,
+      "sha256": "af79cc40c6a62059332702324c41c1811ac514eddbe4df1880a8341414791d32",
+      "caption_segments": 4
+    },
+    {
+      "id": "power",
+      "duration": 11.863,
+      "rms": 0.1062,
+      "sha256": "6f074957306f4ef1a032fe5964dd4c67f839d59817f99f833f785ffb520c01ea",
+      "caption_segments": 3
+    },
+    {
+      "id": "abort",
+      "duration": 14.161,
+      "rms": 0.1101,
+      "sha256": "87e185aa72e4eea0afe6f2f9c50ed622daaf65738caf81d17cb85ef615fb0ad4",
+      "caption_segments": 4
+    },
+    {
+      "id": "recovery",
+      "duration": 14.756,
+      "rms": 0.1063,
+      "sha256": "a238a91e6b2e92aa525d1578bdb31383e8a017738ae858554c048ddb0fbd2024",
+      "caption_segments": 4
+    },
+    {
+      "id": "parachute_pc",
+      "duration": 9.141,
+      "rms": 0.1051,
+      "sha256": "e6ed8aa0db96da41c056f3821ff4e69bc9b0d2d7f6630ccd38b06bbb12791c45",
+      "caption_segments": 2
+    },
+    {
+      "id": "parachute_vr",
+      "duration": 9.489,
+      "rms": 0.1081,
+      "sha256": "c3c0ba33a42d1068466e2c5e77b31a932b47e290228f9980ee796ebeca1f4966",
+      "caption_segments": 2
+    },
+    {
+      "id": "rendezvous_pc",
+      "duration": 13.424,
+      "rms": 0.1096,
+      "sha256": "4a2b90e104ba92ece9719ca2eb03906e56f7004bd828c1c4577110587ee59e8f",
+      "caption_segments": 3
+    },
+    {
+      "id": "rendezvous_vr",
+      "duration": 14.283,
+      "rms": 0.1091,
+      "sha256": "6e047a3e1f303b09be3a97d5ed4ada283e6b1e2c2fae12c637e4a8fd32822a93",
+      "caption_segments": 4
+    },
+    {
+      "id": "docking",
+      "duration": 15.247,
+      "rms": 0.1068,
+      "sha256": "4509a8cd6dc490242ed6f6195d2dfd0533f215b7cca0cca8f0ad7205ad16f437",
+      "caption_segments": 5
+    },
+    {
+      "id": "complete",
+      "duration": 8.997,
+      "rms": 0.1088,
+      "sha256": "dc732d3b0474dde198c85397c60dd0ebc3c041f93de9a96709cde4cbc801cb14",
+      "caption_segments": 3
+    },
+    {
+      "id": "launch_call",
+      "duration": 1.014,
+      "rms": 0.0762,
+      "sha256": "63c54a66170b7873f2bcfe99fcb5aeac59401c6a4c7a04af254e722c010b47f5",
+      "caption_segments": 1
+    },
+    {
+      "id": "mission_02",
+      "duration": 12.909,
+      "rms": 0.1045,
+      "sha256": "1ef4bb1987cf9837895bd488242389b39f8bf489277990e44f4bd97ca8d1a66c",
+      "caption_segments": 3
+    },
+    {
+      "id": "mission_03",
+      "duration": 12.088,
+      "rms": 0.1083,
+      "sha256": "34e246ca0138878f0ea67ef60f18049addb35556ae72907623b0796ff92be2ed",
+      "caption_segments": 4
+    },
+    {
+      "id": "mission_04",
+      "duration": 11.242,
+      "rms": 0.108,
+      "sha256": "32ee287a432363c1deddb3bb9e852f5d690310190702d4c2893a8d11f521fb62",
+      "caption_segments": 3
+    },
+    {
+      "id": "mission_05",
+      "duration": 13.084,
+      "rms": 0.1096,
+      "sha256": "ff80251fe7056563b2107b874881ab60f5893e930b1a6c3a5c00ec1c23883080",
+      "caption_segments": 4
+    },
+    {
+      "id": "mission_06",
+      "duration": 14.393,
+      "rms": 0.1063,
+      "sha256": "47240817993813f20872d152e98a3829173542378129cc1658aad4825bec463a",
+      "caption_segments": 4
+    },
+    {
+      "id": "mission_07",
+      "duration": 12.32,
+      "rms": 0.1106,
+      "sha256": "80e59e529cd65760fd8b40da8313bdc529ead239f4c95b3d7d091d0cd258651f",
+      "caption_segments": 3
+    },
+    {
+      "id": "mission_08",
+      "duration": 10.581,
+      "rms": 0.112,
+      "sha256": "0c2c2038c6fc73c8af575168703fecd2cf5f46ea16922de7404afc6702406e33",
+      "caption_segments": 3
+    },
+    {
+      "id": "mission_09",
+      "duration": 11.914,
+      "rms": 0.1104,
+      "sha256": "9a696b1f796513b7e555c3a3b9a9ffa80b2020de243924c6b117b974d1d835cc",
+      "caption_segments": 3
+    },
+    {
+      "id": "mission_10",
+      "duration": 11.109,
+      "rms": 0.1045,
+      "sha256": "9b69aa9143823fbefca0df6c6dd08d57f219ca1a958e716802359a519e6c80f9",
+      "caption_segments": 3
+    },
+    {
+      "id": "mission_11",
+      "duration": 12.712,
+      "rms": 0.1067,
+      "sha256": "c9e88d12c2d45be27f985a9b69dde63784d0d08f7ef9b36cd8167078d483c930",
+      "caption_segments": 4
+    },
+    {
+      "id": "mission_12",
+      "duration": 12.811,
+      "rms": 0.1068,
+      "sha256": "dfd9b16dc6c95d5fba6056f3876b4533e083b46ec620d30a102a8fed53f294c2",
+      "caption_segments": 3
+    },
+    {
+      "id": "mission_13",
+      "duration": 12.402,
+      "rms": 0.1096,
+      "sha256": "a3c4a59967112cc031652a1c32deac82316e2cbab6e5a8ce6b9515dfda3a40f8",
+      "caption_segments": 4
+    },
+    {
+      "id": "mission_14",
+      "duration": 12.153,
+      "rms": 0.1092,
+      "sha256": "253fdaa551eabcb34b20c05567b44aaae2d0de94457daaa48f13d3c27055b701",
+      "caption_segments": 3
+    },
+    {
+      "id": "mission_15",
+      "duration": 11.087,
+      "rms": 0.1101,
+      "sha256": "cd7ffb6b9107a8906f760489ac51ffc2d42aedf1701e468fefc304edb72d0c0b",
+      "caption_segments": 3
+    },
+    {
+      "id": "mission_16",
+      "duration": 13.039,
+      "rms": 0.1089,
+      "sha256": "a0b4f57e8b293fde33e2db488f17f1fa48a10a47518a01924674d4925dfa8735",
+      "caption_segments": 4
+    },
+    {
+      "id": "mission_17",
+      "duration": 12.441,
+      "rms": 0.1064,
+      "sha256": "cee7f2af2201db02a30d66321b65de7acdadd8671b95d04f994d09ad337a24b2",
+      "caption_segments": 3
+    },
+    {
+      "id": "mission_18",
+      "duration": 11.204,
+      "rms": 0.1099,
+      "sha256": "6143b89665d09e6a0db22bffd4fcddf439f182fc736fd22dfa6697f8234a0f3a",
+      "caption_segments": 3
+    },
+    {
+      "id": "mission_19",
+      "duration": 13.099,
+      "rms": 0.1079,
+      "sha256": "6b47258cd0ca052eb9cd94a40515dc514fc49d8a199d8d18b792b36c53a04269",
+      "caption_segments": 3
+    },
+    {
+      "id": "mission_20",
+      "duration": 15.175,
+      "rms": 0.1073,
+      "sha256": "fd560d1bb46b3b274e575811f69942573f8c47ccaeeac65e28706c8941cd6f23",
+      "caption_segments": 4
+    },
+    {
+      "id": "part_booster_engine",
+      "duration": 9.47,
+      "rms": 0.1032,
+      "sha256": "dac0d13ff2224c6c245cc2e70f4d3f65399e312bcd6cd8b89f475ac6eeeae8be",
+      "caption_segments": 4
+    },
+    {
+      "id": "part_first_stage",
+      "duration": 7.639,
+      "rms": 0.1153,
+      "sha256": "c2cf7f0e5f13f93e1fb05709eb4a6e042b150e3bca25852bfe8da841ec0830fe",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_adapter",
+      "duration": 7.182,
+      "rms": 0.1086,
+      "sha256": "d8614b75536074b17502ad3f482a1cebc24890956386ed8fdbbb486031deca81",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_vacuum_engine",
+      "duration": 7.666,
+      "rms": 0.1126,
+      "sha256": "5e8f2104507c3bc977f2aec3c3fb56e789c845c45e0284ea2b1f6030bb32914e",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_second_stage",
+      "duration": 8.121,
+      "rms": 0.1123,
+      "sha256": "5ef9ff6f512c7fdc8841582ca9800d67a42593cd42147746de82912425b9fead",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_fin",
+      "duration": 9.346,
+      "rms": 0.1011,
+      "sha256": "7d71a6463997dd4d1d67d4c09bf76f0b21ceaac1e6c4ffb48eb38668525f7287",
+      "caption_segments": 4
+    },
+    {
+      "id": "part_instrument_bay",
+      "duration": 8.154,
+      "rms": 0.1093,
+      "sha256": "b3fd98bfed7adfbec242c8d7cad61d6ad09cf66ffcca6c1d7d31e6fc6e79f6af",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_fairing",
+      "duration": 8.11,
+      "rms": 0.1071,
+      "sha256": "d261e9a96ca50fc3cc80e2848794eed657d0e5fc6ceec93c74a1db527e2574d6",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_window",
+      "duration": 7.306,
+      "rms": 0.1065,
+      "sha256": "a42fdaf80c703d10707b453ad18bbda849b30a57352d495c5df389a919e9e239",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_antenna",
+      "duration": 8.369,
+      "rms": 0.1055,
+      "sha256": "f689ebbc11bb2edb161165dcea31b82b1cc461276576b971557b481bd7489c51",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_fuel_tank",
+      "duration": 6.341,
+      "rms": 0.1105,
+      "sha256": "a4fd525067debd6b03c99619f58ec69dbb82dae6c720800fdbd44013857c73e8",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_oxidizer_tank",
+      "duration": 7.418,
+      "rms": 0.1076,
+      "sha256": "01991d9cfee62591809b4963e163a6a68a25bdf928046494e0c1ce517f642299",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_service_tank",
+      "duration": 9.091,
+      "rms": 0.1085,
+      "sha256": "64532c301a7b0632e1b689b3a30bf091d9251f510b23dc24e37da78be628b74a",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_solid_booster",
+      "duration": 9.914,
+      "rms": 0.1068,
+      "sha256": "fce11b119c9e83849a704c8a73bc286fe72560c3eab32d7d36e3917992b9ec04",
+      "caption_segments": 4
+    },
+    {
+      "id": "part_radial_decoupler",
+      "duration": 8.152,
+      "rms": 0.1055,
+      "sha256": "14a764a2a00e034b9e05a179347c5b0ee0f5ce62b7748010d9bb0e50568f0fa2",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_stack_decoupler",
+      "duration": 7.907,
+      "rms": 0.1107,
+      "sha256": "2ce83fe6bb46013ebd85b2ceae4c99488afa63bdf6a5a546b78d1397421c70e6",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_fuel_line",
+      "duration": 8.022,
+      "rms": 0.1021,
+      "sha256": "e0f39c372e3d7f7a93b03f7c7e91f9fbdff5c852e38590dbb9fdf40938fd1a82",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_fuel_pump",
+      "duration": 8.104,
+      "rms": 0.1078,
+      "sha256": "80685b6bebdfb3f60896e52b8f4d66bb1828f4082892bc12b365dc42fbb5b41b",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_fuel_valve",
+      "duration": 7.861,
+      "rms": 0.1063,
+      "sha256": "31ae73b0a309abb9dbfe302afa2ae194b83072c90ea5697a71b83d86e225c1d1",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_pressurizer",
+      "duration": 7.641,
+      "rms": 0.107,
+      "sha256": "08e58261dcf981c67e67f7a86b64ad3078b60c0dab0b5b5fbf8e06404c8f61e5",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_gimbal",
+      "duration": 7.682,
+      "rms": 0.1087,
+      "sha256": "ceea54dbb6754f8680fca379de80773fac38be29d437c27c8d2f356c2f0a6239",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_vernier_engine",
+      "duration": 8.766,
+      "rms": 0.1059,
+      "sha256": "0c831b602296917fdc42d8232b412352a2e28f5996aff3ad516fe9e3083e0b5c",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_rcs",
+      "duration": 8.592,
+      "rms": 0.1105,
+      "sha256": "bad7f488e48accdc4e4dea55f2c9611ab70c1e1ecaf5e3e91cb98f9f8dbcb7cb",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_reaction_wheel",
+      "duration": 7.651,
+      "rms": 0.1111,
+      "sha256": "5c62c66c6e65631b3b2d0f205ca5da61c5a1f32446bd492b03c0a0c5a5653c2c",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_gyroscope",
+      "duration": 9.304,
+      "rms": 0.1052,
+      "sha256": "a499d34f537bbf96701886a8cbbfd7991163b207fee2a0968ff0accdb6c9cec1",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_horizon_sensor",
+      "duration": 8.326,
+      "rms": 0.1066,
+      "sha256": "a185cd70bbd17a33b2a87efc1f657515780909d7691edfdf845f21ff3d085b01",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_control_fin",
+      "duration": 8.285,
+      "rms": 0.1068,
+      "sha256": "f8ddef8d98e893b49358a87e9fda4e18b3b813e1674b656c251115a424aaa6c2",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_airbrake",
+      "duration": 8.521,
+      "rms": 0.1037,
+      "sha256": "66e9199013e37db6ed658091ad6b20aa76836fa04d25b4fe2872fafcd139aaa4",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_ballast",
+      "duration": 7.287,
+      "rms": 0.1033,
+      "sha256": "0def9103b9ea8ca19ec8e08a64d400e4842bc931ce000365ecfa704947c67ef4",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_computer",
+      "duration": 8.907,
+      "rms": 0.1057,
+      "sha256": "af2e92a679c8c79f0bbf394cf261f97a83584b2c44c4af33144dedcf6dd43f77",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_battery",
+      "duration": 7.563,
+      "rms": 0.1063,
+      "sha256": "389fa6789abf8ce44a5965766614f1b37c45555d2cc73382b8faebd98b646ce1",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_solar_panel",
+      "duration": 8.545,
+      "rms": 0.1062,
+      "sha256": "a2eb43d1be54147eb4a6afdcbf2df6b86c361b1f75f606f7d81b06fb8933f2dc",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_fuel_cell",
+      "duration": 7.875,
+      "rms": 0.1079,
+      "sha256": "f3774dd5fb836efabdaa4d791d6919cb57e412ad0f1a893aa3667cbe2aadcfbd",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_power_bus",
+      "duration": 9.014,
+      "rms": 0.109,
+      "sha256": "10d122142fb3981170472b9561391c8491c931a56762a36d61f7ef833d90a926",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_radiator",
+      "duration": 7.018,
+      "rms": 0.1061,
+      "sha256": "0620aa810b86e52b97744c7e3c4d02d2050e0295234b558c379a3693d6b20828",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_insulation",
+      "duration": 7.662,
+      "rms": 0.1034,
+      "sha256": "74e7abc7086238584adba5ac9de7cddfb793a68ffd3bb68d0afabef0cb2eeb4b",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_heat_shield",
+      "duration": 7.265,
+      "rms": 0.1091,
+      "sha256": "598aa71a407761ce634f183d44daf22683b02dac2565ceaae2e0d8d0bd6d11cb",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_thermometer",
+      "duration": 8.575,
+      "rms": 0.1086,
+      "sha256": "5129f7851b593f177aa4f68122363395486fe36cc4faad4b783b651ce6f4af0c",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_altimeter",
+      "duration": 8.151,
+      "rms": 0.1036,
+      "sha256": "28d25245c469f8374b3c01a65383e55f3edb54cff5950be7371952e1c38bd58e",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_transmitter",
+      "duration": 8.667,
+      "rms": 0.1077,
+      "sha256": "960eec58d775b35926c4ad62454c0d6c61353a6a1937c10f93be2ef6fa508f83",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_capsule",
+      "duration": 9.162,
+      "rms": 0.1083,
+      "sha256": "327075f28f796bc8a5e06228b4ccba13acaa1ce9f8e9bbb74ca82c1989c9e508",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_satellite",
+      "duration": 7.927,
+      "rms": 0.1118,
+      "sha256": "3b13ac844f3f245af33a0c09c4b64e8f83a7c374945b9b920e831c685decab81",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_docking_port",
+      "duration": 8.266,
+      "rms": 0.1105,
+      "sha256": "4c6d253b93eecd9a8d73d93a7cb2b1d3b587155e4d0cc06b4c483d0ccc3c1540",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_cargo_bay",
+      "duration": 7.567,
+      "rms": 0.1077,
+      "sha256": "080baa7fcdbc80a77b4caac79f9360c7a8191f8f125716199657b1ba7a429ef1",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_payload_separator",
+      "duration": 8.704,
+      "rms": 0.1135,
+      "sha256": "c37d8097d4c5834a48b3a92a2ca6fd33e0d554e0ef9ba879bf22c6d7e0e3a435",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_parachute",
+      "duration": 10.936,
+      "rms": 0.1049,
+      "sha256": "888525febc2a28b42230edab1cc72589830e3172b189ff8b5e6145790974aef9",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_drogue",
+      "duration": 8.773,
+      "rms": 0.1053,
+      "sha256": "916a68e0467accc3dd00410c261f88c44807d48a71abc42b90c2b934d6e8ca17",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_landing_leg",
+      "duration": 8.985,
+      "rms": 0.1057,
+      "sha256": "bd5d2cd063935191df73be875dc0ab8791733ed163c00915f5178bbf6c843ba4",
+      "caption_segments": 4
+    },
+    {
+      "id": "part_escape_tower",
+      "duration": 8.213,
+      "rms": 0.1101,
+      "sha256": "308c7d35fcb5a4f25cc068128010bb456a532626edf6ae9836d2315cc165871b",
+      "caption_segments": 3
+    },
+    {
+      "id": "part_recorder",
+      "duration": 8.367,
+      "rms": 0.1056,
+      "sha256": "ecbf0b0fb8972cbd761cdab1c2c74f4b4f954051c75c4b3b7db37d5f84ff9e7f",
+      "caption_segments": 3
+    }
+  ],
+  "music": {
+    "name": "Orbital Night",
+    "duration": 120,
+    "channels": 2,
+    "original": true
+  }
+}

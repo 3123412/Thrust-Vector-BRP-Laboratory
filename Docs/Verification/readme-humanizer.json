@@ -1,0 +1,50 @@
+{
+  "hard_ban_count": 0,
+  "hard_bans": [],
+  "marker_count": 0,
+  "markers": [],
+  "rhythm": {
+    "sentences": 11,
+    "words": 77,
+    "mean_len": 7,
+    "stdev_len": 4.1,
+    "cv_len": 0.591,
+    "min_len": 2,
+    "max_len": 18,
+    "short_share": 0.273,
+    "long_share": 0.0,
+    "em_dash": 0,
+    "ellipsis": 0,
+    "parentheses": 1,
+    "questions": 0,
+    "staccato_runs": 0,
+    "staccato_max": 0
+  },
+  "morph": {
+    "nouns": 31,
+    "verbs": 12,
+    "noun_verb_ratio": 2.58,
+    "nominalizations": 2,
+    "tokens": 57
+  },
+  "structure": {
+    "paragraphs": 6,
+    "para_mean_sent": 2.2,
+    "para_cv": 0.414,
+    "list_items": 0,
+    "listicle_share": 0.0,
+    "title_case_headings": 1,
+    "truncated_ending": false
+  },
+  "score": {
+    "score": 100,
+    "band": "чисто",
+    "penalties": [],
+    "notes": []
+  },
+  "genre": "marketing",
+  "muted_by_genre": {
+    "hard_bans": 0,
+    "markers": 0
+  }
+}

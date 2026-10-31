@@ -1,0 +1,221 @@
+{
+    "utc": "2026-10-31T10:02:19.8218816Z",
+    "passed": 16,
+    "failed": 0,
+    "checks": [
+        {
+            "id": "booster_engine",
+            "message": "Envelope, source transforms and canonical material references preserved",
+            "passed": true,
+            "boundsError": 1.1920928955078125e-7,
+            "materialGroups": 4,
+            "triangles": 9840,
+            "materialPaths": [
+                "Assets/BRP/Art/Materials/BRP_Blue.mat",
+                "Assets/BRP/Art/Materials/BRP_Copper.mat",
+                "Assets/BRP/Art/Materials/BRP_Graphite.mat",
+                "Assets/BRP/Art/Materials/BRP_Silver.mat"
+            ]
+        },
+        {
+            "id": "vacuum_engine",
+            "message": "Envelope, source transforms and canonical material references preserved",
+            "passed": true,
+            "boundsError": 1.1920928955078125e-7,
+            "materialGroups": 4,
+            "triangles": 9840,
+            "materialPaths": [
+                "Assets/BRP/Art/Materials/BRP_Blue.mat",
+                "Assets/BRP/Art/Materials/BRP_Copper.mat",
+                "Assets/BRP/Art/Materials/BRP_Graphite.mat",
+                "Assets/BRP/Art/Materials/BRP_Silver.mat"
+            ]
+        },
+        {
+            "id": "first_stage",
+            "message": "Envelope, source transforms and canonical material references preserved",
+            "passed": true,
+            "boundsError": 2.747638347955217e-7,
+            "materialGroups": 3,
+            "triangles": 7472,
+            "materialPaths": [
+                "Assets/BRP/Art/Materials/BRP_Blue.mat",
+                "Assets/BRP/Art/Materials/BRP_Graphite.mat",
+                "Assets/BRP/Art/Materials/BRP_Silver.mat"
+            ]
+        },
+        {
+            "id": "second_stage",
+            "message": "Envelope, source transforms and canonical material references preserved",
+            "passed": true,
+            "boundsError": 1.9082797564351495e-7,
+            "materialGroups": 3,
+            "triangles": 7472,
+            "materialPaths": [
+                "Assets/BRP/Art/Materials/BRP_Blue.mat",
+                "Assets/BRP/Art/Materials/BRP_Graphite.mat",
+                "Assets/BRP/Art/Materials/BRP_Silver.mat"
+            ]
+        },
+        {
+            "id": "fuel_tank",
+            "message": "Envelope, source transforms and canonical material references preserved",
+            "passed": true,
+            "boundsError": 1.2644053981603065e-7,
+            "materialGroups": 3,
+            "triangles": 6384,
+            "materialPaths": [
+                "Assets/BRP/Art/Materials/BRP_Blue.mat",
+                "Assets/BRP/Art/Materials/BRP_Graphite.mat",
+                "Assets/BRP/Art/Materials/BRP_Silver.mat"
+            ]
+        },
+        {
+            "id": "oxidizer_tank",
+            "message": "Envelope, source transforms and canonical material references preserved",
+            "passed": true,
+            "boundsError": 1.2644053981603065e-7,
+            "materialGroups": 3,
+            "triangles": 6384,
+            "materialPaths": [
+                "Assets/BRP/Art/Materials/BRP_Blue.mat",
+                "Assets/BRP/Art/Materials/BRP_Graphite.mat",
+                "Assets/BRP/Art/Materials/BRP_Silver.mat"
+            ]
+        },
+        {
+            "id": "capsule",
+            "message": "Envelope, source transforms and canonical material references preserved",
+            "passed": true,
+            "boundsError": 1.1920928955078125e-7,
+            "materialGroups": 4,
+            "triangles": 6776,
+            "materialPaths": [
+                "Assets/BRP/Art/Materials/BRP_Blue.mat",
+                "Assets/BRP/Art/Materials/BRP_Glass.mat",
+                "Assets/BRP/Art/Materials/BRP_Graphite.mat",
+                "Assets/BRP/Art/Materials/BRP_Silver.mat"
+            ]
+        },
+        {
+            "id": "heat_shield",
+            "message": "Envelope, source transforms and canonical material references preserved",
+            "passed": true,
+            "boundsError": 6.664001972467304e-8,
+            "materialGroups": 3,
+            "triangles": 5028,
+            "materialPaths": [
+                "Assets/BRP/Art/Materials/BRP_Blue.mat",
+                "Assets/BRP/Art/Materials/BRP_Graphite.mat",
+                "Assets/BRP/Art/Materials/BRP_Silver.mat"
+            ]
+        },
+        {
+            "id": "landing_leg",
+            "message": "Envelope, source transforms and canonical material references preserved",
+            "passed": true,
+            "boundsError": 8.462232869987929e-8,
+            "materialGroups": 4,
+            "triangles": 968,
+            "materialPaths": [
+                "Assets/BRP/Art/Materials/BRP_Blue.mat",
+                "Assets/BRP/Art/Materials/BRP_Copper.mat",
+                "Assets/BRP/Art/Materials/BRP_Graphite.mat",
+                "Assets/BRP/Art/Materials/BRP_Silver.mat"
+            ]
+        },
+        {
+            "id": "adapter",
+            "message": "Envelope, source transforms and canonical material references preserved",
+            "passed": true,
+            "boundsError": 1.2287812012345967e-7,
+            "materialGroups": 3,
+            "triangles": 3292,
+            "materialPaths": [
+                "Assets/BRP/Art/Materials/BRP_Blue.mat",
+                "Assets/BRP/Art/Materials/BRP_Graphite.mat",
+                "Assets/BRP/Art/Materials/BRP_Silver.mat"
+            ]
+        },
+        {
+            "id": "fairing",
+            "message": "Envelope, source transforms and canonical material references preserved",
+            "passed": true,
+            "boundsError": 1.365714012990793e-7,
+            "materialGroups": 3,
+            "triangles": 3756,
+            "materialPaths": [
+                "Assets/BRP/Art/Materials/BRP_Blue.mat",
+                "Assets/BRP/Art/Materials/BRP_Graphite.mat",
+                "Assets/BRP/Art/Materials/BRP_Silver.mat"
+            ]
+        },
+        {
+            "id": "docking_port",
+            "message": "Envelope, source transforms and canonical material references preserved",
+            "passed": true,
+            "boundsError": 5.372690026206328e-8,
+            "materialGroups": 3,
+            "triangles": 3576,
+            "materialPaths": [
+                "Assets/BRP/Art/Materials/BRP_Blue.mat",
+                "Assets/BRP/Art/Materials/BRP_Graphite.mat",
+                "Assets/BRP/Art/Materials/BRP_Silver.mat"
+            ]
+        },
+        {
+            "id": "stack_decoupler",
+            "message": "Envelope, source transforms and canonical material references preserved",
+            "passed": true,
+            "boundsError": 8.720680710894158e-8,
+            "materialGroups": 3,
+            "triangles": 4544,
+            "materialPaths": [
+                "Assets/BRP/Art/Materials/BRP_Blue.mat",
+                "Assets/BRP/Art/Materials/BRP_Graphite.mat",
+                "Assets/BRP/Art/Materials/BRP_Silver.mat"
+            ]
+        },
+        {
+            "id": "instrument_bay",
+            "message": "Envelope, source transforms and canonical material references preserved",
+            "passed": true,
+            "boundsError": 9.42432194506182e-8,
+            "materialGroups": 3,
+            "triangles": 7900,
+            "materialPaths": [
+                "Assets/BRP/Art/Materials/BRP_Blue.mat",
+                "Assets/BRP/Art/Materials/BRP_Graphite.mat",
+                "Assets/BRP/Art/Materials/BRP_Silver.mat"
+            ]
+        },
+        {
+            "id": "gimbal",
+            "message": "Envelope, source transforms and canonical material references preserved",
+            "passed": true,
+            "boundsError": 1.1920928955078125e-7,
+            "materialGroups": 4,
+            "triangles": 4288,
+            "materialPaths": [
+                "Assets/BRP/Art/Materials/BRP_Blue.mat",
+                "Assets/BRP/Art/Materials/BRP_Copper.mat",
+                "Assets/BRP/Art/Materials/BRP_Graphite.mat",
+                "Assets/BRP/Art/Materials/BRP_Silver.mat"
+            ]
+        },
+        {
+            "id": "rcs",
+            "message": "Envelope, source transforms and canonical material references preserved",
+            "passed": true,
+            "boundsError": 4.470348358154297e-8,
+            "materialGroups": 4,
+            "triangles": 2616,
+            "materialPaths": [
+                "Assets/BRP/Art/Materials/BRP_Blue.mat",
+                "Assets/BRP/Art/Materials/BRP_Copper.mat",
+                "Assets/BRP/Art/Materials/BRP_Graphite.mat",
+                "Assets/BRP/Art/Materials/BRP_Silver.mat"
+            ]
+        }
+    ]
+}

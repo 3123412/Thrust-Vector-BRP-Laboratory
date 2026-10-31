@@ -1,0 +1,35 @@
+{
+  "file": "C:\\Developing\\My project\\Artifacts\\earth_sphere_hd.fbx",
+  "segments": 256,
+  "rings": 128,
+  "vertices": 32514,
+  "polygons": 32768,
+  "triangles": 65024,
+  "radiusMin": 0.9999999013962175,
+  "radiusMax": 1.0000001341104419,
+  "boundaryEdges": 0,
+  "nonmanifoldEdges": 0,
+  "inwardFaces": 0,
+  "allFacesSmooth": true,
+  "uvLayer": "UVMap",
+  "uvMin": [
+    0.0,
+    0.0
+  ],
+  "uvMax": [
+    1.0000001192092896,
+    1.0
+  ],
+  "blenderScale": [
+    1.0,
+    1.0,
+    1.0
+  ],
+  "blenderRotation": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "sceneUnitScale": 1.0,
+  "bytes": 1529340
+}

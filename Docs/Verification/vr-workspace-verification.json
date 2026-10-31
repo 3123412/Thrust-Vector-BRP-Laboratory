@@ -1,0 +1,32 @@
+{
+    "utc": "2026-10-31T10:06:55.8510765Z",
+    "passed": 5,
+    "failed": 0,
+    "checks": [
+        {
+            "name": "seated workspace uses explicit recenter without moving craft",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "worldspace panels remain positioned through observer round trip",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "focus loss clears orientation and translation input",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "modal panels clear stale flight input",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "return to workshop keeps chosen recenter",
+            "passed": true,
+            "details": ""
+        }
+    ]
+}

@@ -1,0 +1,57 @@
+{
+    "utc": "2026-10-31T10:05:57.3639023Z",
+    "passed": 10,
+    "failed": 0,
+    "checks": [
+        {
+            "name": "custom finish applies and survives undo redo",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "finish preview cancel preserves blueprint",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "automatic VR has no manual menu button",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "flight hides workshop navigation",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "smoke uses a collision plane and floating origin anchor",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "Earth survives system map round trip",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "space hides atmospheric controls",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "immersive presentation preserves tracked camera pose",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "lunar scenario preserves custom lander finish",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "lunar landing and manual relaunch",
+            "passed": true,
+            "details": ""
+        }
+    ]
+}

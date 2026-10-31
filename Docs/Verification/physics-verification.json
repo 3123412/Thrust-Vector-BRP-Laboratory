@@ -1,0 +1,67 @@
+{
+    "utc": "2026-10-31T09:54:46.6291801Z",
+    "passed": 12,
+    "failed": 0,
+    "checks": [
+        {
+            "name": "rotated cylinder inertia transforms as a tensor",
+            "passed": true,
+            "details": "Rotated angular momentum error=2,722E-009"
+        },
+        {
+            "name": "fuel depletion preserves the structural coordinate frame",
+            "passed": true,
+            "details": "Structural origin displacement=0,000E+000m"
+        },
+        {
+            "name": "RCS expenditure updates mass in the same step",
+            "passed": true,
+            "details": "Resource/mass disagreement=0,000E+000kg"
+        },
+        {
+            "name": "vacuum burn agrees with the rocket equation",
+            "passed": true,
+            "details": "Expected=258,01034m/s; actual=258,01031m/s; relative error=1,306E-007"
+        },
+        {
+            "name": "RCS impulse scales with its last propellant remainder",
+            "passed": true,
+            "details": "Last 1mg propellant: impulse=0,012000Ns; expected=0,012000Ns"
+        },
+        {
+            "name": "offset radial separation conserves angular and linear momentum",
+            "passed": true,
+            "details": "Linear error=7,454E-009; angular error=6,031E-003"
+        },
+        {
+            "name": "horizontal hull contacts ground at its radius",
+            "passed": true,
+            "details": "Clearance=0,45000m; radius=0,45000m"
+        },
+        {
+            "name": "guidance can leave an exactly reversed attitude",
+            "passed": true,
+            "details": "Angular speed after reversal command=0,376991rad/s"
+        },
+        {
+            "name": "tail fins restore attitude and damp angular motion",
+            "passed": true,
+            "details": "Tail=-9,564E-004; nose=8,672E-004; damped pitch=0,199950rad/s"
+        },
+        {
+            "name": "large simulation step retains bounded physics substeps",
+            "passed": true,
+            "details": "0.4s vs 20x0.02s state difference=0,000E+000"
+        },
+        {
+            "name": "Земля eccentric orbit energy and angular momentum",
+            "passed": true,
+            "details": "Five eccentric orbits; energy error=1,556E-012; angular momentum error=2,890E-013"
+        },
+        {
+            "name": "Луна eccentric orbit energy and angular momentum",
+            "passed": true,
+            "details": "Five eccentric orbits; energy error=2,249E-013; angular momentum error=4,349E-014"
+        }
+    ]
+}

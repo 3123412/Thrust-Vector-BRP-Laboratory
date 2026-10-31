@@ -1,0 +1,12 @@
+{
+    "utc": "2026-10-31T10:06:48.8297518Z",
+    "context": "hero-v4-hangar / Editor Game View; not headset timing",
+    "frames": 722,
+    "width": 1920,
+    "height": 1080,
+    "renderers": 215,
+    "triangles": 617652,
+    "drawCalls": 502,
+    "averageFrameMs": 11.081649584490036,
+    "p95FrameMs": 13.340199999220204
+}

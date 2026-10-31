@@ -1,0 +1,37 @@
+{
+    "utc": "2026-10-31T10:05:41.5178573Z",
+    "passed": 6,
+    "failed": 0,
+    "checks": [
+        {
+            "name": "first module inspection is optional and preserves the craft",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "inspection supports bounded zoom and manual assembly",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "engine lesson shows the real mating module and insertion guide",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "catalog reveal selects the required category",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "VR inspection remains fixed and does not write tracked pose",
+            "passed": true,
+            "details": ""
+        },
+        {
+            "name": "hidden inspection suspends its camera and lights",
+            "passed": true,
+            "details": ""
+        }
+    ]
+}
