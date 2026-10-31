@@ -1,0 +1,21 @@
+{
+  "generator": "Tools/build_world_v3.py",
+  "source": "SourceArt/BRP_World_V3.blend",
+  "apply": "BRP.Editor.WorldUpgradeBuilder.ConfigureAssets()",
+  "models": {
+    "saturnRings": "Assets/BRP/Art/Models/ring_saturn_v3.fbx",
+    "spaceport": "Assets/BRP/Art/Models/spaceport_v3.fbx",
+    "moon": "Assets/BRP/Art/Models/moon_v3.fbx",
+    "hangar": "Assets/BRP/Art/Models/studio_hangar_v3.fbx",
+    "lunarSurface": "Assets/BRP/Art/Models/lunar_surface_v3.fbx",
+    "planetSphere": "Assets/BRP/Art/Models/planet_sphere_v3.fbx"
+  },
+  "units": "meters; normalized prefab wrappers preserve FBX child transforms",
+  "moonNominalRadius": 1,
+  "lunarSurfaceWidth": 2400,
+  "lunarLandingFlatRadius": 65,
+  "lunarRockExclusionRadius": 45,
+  "launchApronTop": 0,
+  "launchTrenchBottom": -1.02,
+  "provenance": "Own procedural Blender geometry and textures. No downloaded NASA assets used."
+}
