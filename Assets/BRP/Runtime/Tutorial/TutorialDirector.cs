@@ -11,11 +11,10 @@ namespace BRP
     {
         LaboratoryGame game;
         TutorialAudio audioGuide;
-        RectTransform panel,progressBar,targetCallout;
-        TextMeshProUGUI heading,instruction,stepCounter,liveStatus,whyText,whatText,problemText,targetCaption;
+        RectTransform panel;
+        TextMeshProUGUI instruction;
         TutorialFocusPreview focusPreview;
         TutorialFocusContext focusContext;
-        CanvasGroup panelGroup;
         LineRenderer marker;
         readonly Vector3[] ring=new Vector3[49];
         List<TutorialStep> steps;
@@ -23,7 +22,7 @@ namespace BRP
         FlightBody previousFlight;
         Outline highlighted;
         Graphic highlightedGraphic;
-        float stepSince,nextRefresh,nextResultCheck,stalledSince;
+        float stepSince,nextRefresh,nextResultCheck,stalledSince,captionUntil;
         double coastSince=-1;
         int index,detachAtStart,observedMissionRun=-1,hintLevel;
         bool hidden,vrLayout,successAnnounced,explainLesson,vrPanelPositioned;
@@ -32,6 +31,7 @@ namespace BRP
         PartView guideView;
         bool validGuide;
         string lastProgress;
+        string lastCaption;
         public int ActiveMissionId=>mission?.id??0;
         public int StepIndex=>index;
         public int StepCount=>steps?.Count??0;
@@ -57,23 +57,12 @@ namespace BRP
 
         void BuildPanel()
         {
-            panel=UiTheme.Panel("Flight Coach",game.UI.root,500,790,920,238,UiTheme.Ink);
-            panelGroup=panel.gameObject.AddComponent<CanvasGroup>();
-            UiTheme.Panel("CoachAccent",panel,0,0,5,238,UiTheme.Cyan);
-            UiTheme.Text(panel,"ИНСТРУКТОР",22,12,480,22,15,UiTheme.Cyan);
-            stepCounter=UiTheme.Text(panel,"01 / 01",786,12,110,22,15,UiTheme.Muted);stepCounter.alignment=TextAlignmentOptions.Right;
-            heading=UiTheme.Text(panel,"",22,37,876,30,21);
-            instruction=UiTheme.Text(panel,"",22,72,876,62,32);
-            instruction.enableAutoSizing=true;instruction.fontSizeMin=24;instruction.fontSizeMax=32;
-            whyText=UiTheme.Text(panel,"",22,138,876,25,17,UiTheme.Muted);
-            whatText=UiTheme.Text(panel,"",22,164,876,25,17);
-            problemText=UiTheme.Text(panel,"",22,193,650,22,15,UiTheme.Orange);
-            liveStatus=UiTheme.Text(panel,"",682,193,214,22,15,UiTheme.Cyan);liveStatus.alignment=TextAlignmentOptions.Right;
-            progressBar=UiTheme.Panel("Lesson progress",panel,22,229,876,3,UiTheme.Cyan);
-            targetCallout=UiTheme.Panel("Guidance target",game.UI.root,0,0,286,44,UiTheme.Cyan);
-            targetCaption=UiTheme.Text(targetCallout,"← НУЖНА ЭТА ДЕТАЛЬ",12,0,262,44,18,UiTheme.Ink);targetCaption.alignment=TextAlignmentOptions.MidlineLeft;
-            foreach(var graphic in targetCallout.GetComponentsInChildren<Graphic>()) graphic.raycastTarget=false;
-            targetCallout.gameObject.SetActive(false);
+            instruction=UiTheme.Text(game.UI.root,"",180,82,1560,76,25);
+            instruction.alignment=TextAlignmentOptions.Center;
+            instruction.enableAutoSizing=true;instruction.fontSizeMin=21;instruction.fontSizeMax=26;
+            instruction.raycastTarget=false;instruction.outlineWidth=.22f;instruction.outlineColor=new Color(0,0,0,.92f);
+            var outline=instruction.gameObject.AddComponent<Outline>();outline.effectColor=new Color(0,0,0,.8f);outline.effectDistance=new Vector2(2,-2);
+            panel=instruction.rectTransform;
             panel.gameObject.SetActive(false);
         }
 
@@ -94,13 +83,11 @@ namespace BRP
 
         void ShowStep()
         {
-            vrPanelPositioned=false;nextRefresh=0;var step=steps[index];heading.text=step.title;instruction.text=step.text;
+            vrPanelPositioned=false;nextRefresh=0;var step=steps[index];instruction.text="";lastCaption="";captionUntil=0;
             if(focusPreview!=null) focusPreview.Close();
-            stepCounter.text=$"{index+1:00} / {steps.Count:00}";
-            progressBar.sizeDelta=new Vector2(876f*(index+1)/steps.Count,3);
             stepSince=stalledSince=Time.unscaledTime;hintLevel=0;lastProgress=null;ClearHighlight();
             spokenFocus=MissingPart(step);
-            if(!hidden) audioGuide.Speak(VoiceFor(step));
+            if(!hidden&&!audioGuide.Speak(VoiceFor(step))) instruction.text=step.text;
         }
 
         void Update()
@@ -141,25 +128,28 @@ namespace BRP
                 if(game.UI.GetComponentsInChildren<TextMeshProUGUI>().Any(t=>t.text=="МИССИЯ ВЫПОЛНЕНА"))
                 {successAnnounced=true;index=steps.Count;audioGuide.Speak("complete");ClearHighlight();active=false;}
             }
-            panel.gameObject.SetActive(active&&!hidden&&!focusPreview.IsOpen);
+            panel.gameObject.SetActive(active&&!hidden&&!focusPreview.IsOpen&&!string.IsNullOrEmpty(instruction.text));
             audioGuide.Suspend(game.UI.ModalOpen&&!successAnnounced);
             if(!active||hidden) {marker.positionCount=0;focusPreview.Close();ClearHighlight();return;}
-            bool dragging=game.IsDragging||game.Assembly.views.Any(v=>v.Grab!=null&&v.Grab.isSelected);
-            panelGroup.alpha=Mathf.MoveTowards(panelGroup.alpha,dragging?.15f:1,Time.unscaledDeltaTime*6);
-            panelGroup.blocksRaycasts=!dragging;panelGroup.interactable=!dragging;
             if(game.VREnabled&&!vrPanelPositioned) PositionVR();
             var current=steps[index];bool ready=Satisfied(current);
             if(Time.unscaledTime>=nextRefresh)
             {
-                nextRefresh=Time.unscaledTime+.15f;liveStatus.text=ProgressText(current);
+                nextRefresh=Time.unscaledTime+.15f;
                 UpdateFocusCopy(current);
                 Highlight(current);
                 RefreshGuide(current);
                 RefreshFocus(current);
             }
             string subtitle=audioGuide.CurrentSubtitle;
-            if(!string.IsNullOrEmpty(subtitle)) {if(instruction.text!=subtitle) instruction.text=subtitle;}
-            else if(current.gate!=TutorialGate.HasParts&&instruction.text!=current.text) instruction.text=current.text;
+            if(!string.IsNullOrEmpty(subtitle))
+            {
+                lastCaption=subtitle;captionUntil=Time.unscaledTime+1.25f;
+                if(instruction.text!=subtitle) instruction.text=subtitle;
+            }
+            else if(!audioGuide.IsNarrating&&Time.unscaledTime>captionUntil&&instruction.text.Length>0)
+            {lastCaption="";instruction.text="";panel.gameObject.SetActive(false);}
+            else if(!audioGuide.IsNarrating&&!string.IsNullOrEmpty(lastCaption)&&instruction.text!=lastCaption) instruction.text=lastCaption;
             focusPreview.SetCopy(Purpose(current),ActionText(current),CurrentDiagnostic,subtitle);
             UpdateMarker(current);
             string progress=ProgressText(current)+"|"+CurrentDiagnostic;
@@ -176,9 +166,9 @@ namespace BRP
             var forward=Vector3.ProjectOnPlane(view.forward,Vector3.up).normalized;
             if(forward.sqrMagnitude<.1f) forward=Vector3.forward;
             var rotation=Quaternion.LookRotation(forward,Vector3.up);
-            const float scale=.0014f;
+            const float scale=.0012f;
             panel.rotation=rotation;panel.localScale=Vector3.one*(scale/game.UI.root.lossyScale.x);
-            Vector3 center=view.position+forward*1.35f-Vector3.up*.48f;
+            Vector3 center=view.position+forward*1.45f-Vector3.up*.12f;
             panel.position=center+rotation*new Vector3(-panel.rect.width*scale*.5f,panel.rect.height*scale*.5f,0);
         }
 
@@ -257,13 +247,6 @@ namespace BRP
         {
             if(mission.id==1||step.gate!=TutorialGate.HasParts) return;
             var focus=MissingPart(step);
-            if(focus.HasValue)
-            {
-                var definition=game.Catalog.Find(focus.Value);
-                string location=definition.surface?"Узел на боковой поверхности корпуса.":definition.IsEngine?"Осевой узел снизу, сопло от корпуса.":"Осевой узел сверху корпуса.";
-                string copy=definition.title+". "+definition.description+"\n"+location;
-                if(!audioGuide.IsNarrating&&instruction.text!=copy) instruction.text=copy;
-            }
             if(focus==spokenFocus) return;
             spokenFocus=focus;
             if(focus.HasValue&&!hidden) audioGuide.Speak(VoiceFor(step));
@@ -271,11 +254,11 @@ namespace BRP
 
         void Highlight(TutorialStep step)
         {
-            Graphic graphic=null;string caption="← НУЖНА ЭТА ДЕТАЛЬ";
+            Graphic graphic=null;
             if(!string.IsNullOrEmpty(step.command))
             {
                 var button=game.UI.GetComponentsInChildren<LabButton>().FirstOrDefault(b=>b.command==step.command);
-                if(button!=null) graphic=button.GetComponent<Graphic>();caption="← НАЖМИ ЗДЕСЬ";
+                if(button!=null) graphic=button.GetComponent<Graphic>();
             }
             else if(!game.IsFlying)
             {
@@ -288,7 +271,7 @@ namespace BRP
                     {
                         var definition=game.Catalog.Find(kind.Value);
                         var button=game.UI.GetComponentsInChildren<LabButton>().FirstOrDefault(b=>b.command=="category"&&b.argument==(int)definition.category);
-                        if(button!=null) graphic=button.GetComponent<Graphic>();caption="← ОТКРОЙ КАТЕГОРИЮ";
+                        if(button!=null) graphic=button.GetComponent<Graphic>();
                     }
                 }
             }
@@ -303,29 +286,12 @@ namespace BRP
                 highlighted.effectDistance=new Vector2(3+pulse,-3-pulse);
                 highlighted.effectColor=hintLevel>0?UiTheme.Orange:UiTheme.Cyan;
             }
-            bool visible=graphic!=null&&graphic.gameObject.activeInHierarchy&&!focusPreview.IsOpen;
-            if(visible)
-            {
-                var scroll=graphic.GetComponentInParent<ScrollRect>();
-                if(scroll!=null)
-                {
-                    var center=scroll.viewport.InverseTransformPoint(graphic.rectTransform.TransformPoint(graphic.rectTransform.rect.center));
-                    visible=scroll.viewport.rect.Contains(center);
-                }
-            }
-            targetCallout.gameObject.SetActive(visible);
-            if(!visible) return;
-            var rect=graphic.rectTransform;
-            targetCaption.text=caption;targetCallout.rotation=rect.rotation;
-            float calloutPulse=hintLevel>0?1.08f+Mathf.Sin(Time.unscaledTime*7)*.035f:1;
-            targetCallout.localScale=new Vector3(rect.lossyScale.x/game.UI.root.lossyScale.x,rect.lossyScale.y/game.UI.root.lossyScale.y,1)*calloutPulse;
-            targetCallout.position=rect.TransformPoint(new Vector3(rect.rect.xMax+12,rect.rect.center.y+21.5f,0));
         }
 
         void ClearHighlight()
         {
             if(highlighted!=null) Destroy(highlighted);
-            highlighted=null;highlightedGraphic=null;if(targetCallout!=null) targetCallout.gameObject.SetActive(false);
+            highlighted=null;highlightedGraphic=null;
         }
 
         void UpdateMarker(TutorialStep step)
@@ -421,10 +387,6 @@ namespace BRP
             }
             focusPreview.SetContext(focusContext);
             CurrentDiagnostic=Diagnose(step);
-            whyText.text="ЗАЧЕМ · "+Purpose(step);
-            whatText.text="ДЕЙСТВИЕ · "+ActionText(step);
-            problemText.text=CurrentDiagnostic;
-            focusPreview.SetCopy(Purpose(step),ActionText(step),CurrentDiagnostic,audioGuide.CurrentSubtitle);
         }
 
         string Purpose(TutorialStep step)
@@ -497,6 +459,6 @@ namespace BRP
             Highlight(steps[index]);
         }
 
-        void OnDestroy() {ClearHighlight();if(panel!=null) Destroy(panel.gameObject);if(targetCallout!=null) Destroy(targetCallout.gameObject);if(focusPreview!=null) Destroy(focusPreview);}
+        void OnDestroy() {ClearHighlight();if(panel!=null) Destroy(panel.gameObject);if(focusPreview!=null) Destroy(focusPreview);}
     }
 }
