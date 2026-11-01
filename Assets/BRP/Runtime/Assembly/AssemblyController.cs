@@ -18,6 +18,7 @@ namespace BRP
     public sealed class AssemblyController : MonoBehaviour
     {
         public const float Scale = .34f;
+        const float SnapTolerance = .56f;
         [field: SerializeField] public CraftBlueprint Blueprint { get; private set; } = new CraftBlueprint();
         [field: SerializeField] public PartCatalog Catalog { get; private set; }
         public List<PartView> views = new List<PartView>();
@@ -107,7 +108,7 @@ namespace BRP
 
         public bool TryTarget(PartView moving,out SnapTarget target)
         {
-            float best=.19f;
+            float best=SnapTolerance;
             target=default;
             bool found=false;
             var d=moving.Definition;
@@ -120,7 +121,7 @@ namespace BRP
                     movingConnector=moving.transform.TransformPoint(Vector3.up*d.height);
                     targetConnector+=next.rotation*Vector3.up*d.height;
                 }
-                float distance=Vector3.Distance(movingConnector,assemblyRoot.TransformPoint(targetConnector));
+                float distance=Vector3.Distance(assemblyRoot.InverseTransformPoint(movingConnector),targetConnector);
                 if(distance>=best) return;
                 if(Quaternion.Angle(moving.transform.localRotation,next.rotation)>35) return;
                 best=distance;targetLocal=next;found=true;

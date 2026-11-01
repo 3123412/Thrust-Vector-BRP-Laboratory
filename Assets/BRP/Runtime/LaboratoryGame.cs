@@ -46,6 +46,7 @@ namespace BRP
         PartView dragging;
         List<PartView> dragGroup;
         Vector3 dragStart;
+        Vector3 dragPointerOffset;
         Dictionary<PartView,Vector3> dragOffsets=new Dictionary<PartView,Vector3>();
         Plane dragPlane;
         Vector3 cameraTarget=new Vector3(.1f,2.25f,0);
@@ -174,11 +175,23 @@ namespace BRP
         }
         void BeginDrag(PartView view,bool detach)
         {
+            BeginDrag(view,detach,null,false);
+        }
+        void BeginDrag(PartView view,bool detach,Ray? pointerRay,bool preservePosition)
+        {
             if(view.Attached&&!detach) {Select(view);Toast("Выберите «Снять», чтобы перенести установленную деталь");return;}
             dragging=view;dragGroup=detach?Assembly.Detach(view):new List<PartView>{view};
             dragOffsets.Clear();dragStart=view.transform.position;
             foreach(var item in dragGroup) {dragOffsets[item]=item.transform.position-dragStart;item.Body.isKinematic=true;item.Body.useGravity=false;}
             dragPlane=new Plane(mainCamera.transform.forward,benchRoot.position+Vector3.up*.4f);
+            dragPointerOffset=Vector3.zero;
+            Ray? ray=pointerRay;
+            if(!ray.HasValue&&preservePosition&&Mouse.current!=null)
+                ray=mainCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
+            if(ray.HasValue)
+            {
+                if(dragPlane.Raycast(ray.Value,out float enter)) dragPointerOffset=view.transform.position-ray.Value.GetPoint(enter);
+            }
         }
         public void EndDrag()
         {
@@ -189,13 +202,13 @@ namespace BRP
                 foreach(var item in dragGroup) {item.Body.isKinematic=false;item.Body.useGravity=true;item.Placement.position=benchRoot.InverseTransformPoint(item.transform.position);}
                 Sound.Play(SoundCue.Click);
             }
-            dragging=null;dragGroup=null;snapMarker.positionCount=0;
+            dragging=null;dragGroup=null;dragPointerOffset=Vector3.zero;snapMarker.positionCount=0;
         }
         public void DetachSelected()
         {
             if(Selected==null||IsFlying) return;
             if(vrEnabled) {Assembly.Detach(Selected);Toast("Подсборка разблокирована. Захватите её контроллером.");}
-            else {BeginDrag(Selected,true);Toast("Перенесите подсборку и нажмите ЛКМ для установки");}
+            else {BeginDrag(Selected,true,null,true);Toast("Перенесите подсборку и нажмите ЛКМ для установки");}
         }
         public void DeleteSelected() {if(Selected!=null&&!IsFlying) {Assembly.Delete(Selected);Selected=null;Sound.Play(SoundCue.Click);}}
         public void SymmetrySelected() {if(Selected!=null&&!IsFlying) Assembly.Symmetry(Selected);}
@@ -519,6 +532,7 @@ namespace BRP
                 if(dragPlane.Raycast(ray,out float enter))
                 {
                     Vector3 location=ray.GetPoint(enter);
+                    location+=dragPointerOffset;
                     foreach(var item in dragGroup) item.transform.position=location+dragOffsets[item];
                 }
                 if(keyboard.rKey.wasPressedThisFrame)
@@ -542,7 +556,7 @@ namespace BRP
                 if(Physics.Raycast(ray,out var hit,30))
                 {
                     var view=hit.collider.GetComponentInParent<PartView>();
-                    if(view!=null) {Select(view);if(!view.Attached) BeginDrag(view,false);}
+                    if(view!=null) {Select(view);if(!view.Attached) BeginDrag(view,false,ray,true);}
                     else Select(null);
                 }
             }
@@ -553,8 +567,10 @@ namespace BRP
         }
         void DrawSnap(Vector3 center)
         {
-            snapMarker.positionCount=49;
-            for(int i=0;i<49;i++) {float a=i*Mathf.PI*2/48;snapMarker.SetPosition(i,center+new Vector3(Mathf.Cos(a)*.16f,0,Mathf.Sin(a)*.16f));}
+            const int segments=48;
+            float radius=.47f*benchRoot.lossyScale.x;
+            snapMarker.positionCount=segments+1;
+            for(int i=0;i<=segments;i++) {float a=i*Mathf.PI*2/segments;snapMarker.SetPosition(i,center+new Vector3(Mathf.Cos(a)*radius,0,Mathf.Sin(a)*radius));}
         }
         void UpdateFlight()
         {
