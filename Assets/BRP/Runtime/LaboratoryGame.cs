@@ -502,6 +502,13 @@ namespace BRP
                 if(!automatic) Toast("Шлем не обнаружен. Включён режим ПК.");
                 yield break;
             }
+            var eventSystem=FindAnyObjectByType<EventSystem>();
+            var old=eventSystem.GetComponent<InputSystemUIInputModule>();
+            if(old!=null)
+            {
+                old.enabled=false;Destroy(old);
+                yield return null;
+            }
             vrEnabled=true;mainCamera.gameObject.SetActive(false);
             Application.targetFrameRate=-1;QualitySettings.vSyncCount=0;
             if(xrRig==null) xrRig=Instantiate(Assets.xrRig);
@@ -527,13 +534,6 @@ namespace BRP
             var cameraData=mainCamera.GetComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
             if(cameraData!=null) cameraData.renderPostProcessing=false;
             var raycaster=UI.gameObject.AddComponent<UnityEngine.XR.Interaction.Toolkit.UI.TrackedDeviceGraphicRaycaster>();
-            var eventSystem=FindAnyObjectByType<EventSystem>();
-            var old=eventSystem.GetComponent<InputSystemUIInputModule>();
-            if(old!=null)
-            {
-                old.enabled=false;Destroy(old);
-                yield return null;
-            }
             eventSystem.SetSelectedGameObject(null);
             var xrInputModule=eventSystem.GetComponent<UnityEngine.XR.Interaction.Toolkit.UI.XRUIInputModule>();
             if(xrInputModule==null) xrInputModule=eventSystem.gameObject.AddComponent<UnityEngine.XR.Interaction.Toolkit.UI.XRUIInputModule>();

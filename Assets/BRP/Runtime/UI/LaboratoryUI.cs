@@ -58,9 +58,9 @@ namespace BRP
             var navigation=root.Find("Navigation") as RectTransform;
             if(navigation!=null) navigation.gameObject.SetActive(false);
             if(vrMenu==null) vrMenu=UiTheme.Command(root,"Меню",24,20,180,64,"home").gameObject;
-            AttachVRControl(vrMenu.GetComponent<RectTransform>(),new Vector2(20,-10));
-            if(scaleDown!=null) AttachVRControl(scaleDown.GetComponent<RectTransform>(),new Vector2(1020,-10));
-            if(scaleUp!=null) AttachVRControl(scaleUp.GetComponent<RectTransform>(),new Vector2(1080,-10));
+            AttachVRControl(vrMenu.GetComponent<RectTransform>(),new Vector2(60,-10),new Vector2(240,72));
+            if(scaleDown!=null) AttachVRControl(scaleDown.GetComponent<RectTransform>(),new Vector2(970,-10),new Vector2(72,72));
+            if(scaleUp!=null) AttachVRControl(scaleUp.GetComponent<RectTransform>(),new Vector2(1060,-10),new Vector2(72,72));
             vrMenu.SetActive(!ModalOpen);
             if(mapTools!=null) PlaceVRPanel(mapTools,373,771);
             if(flightMenu!=null) PlaceVRPanel(flightMenu.GetComponent<RectTransform>(),1720,20);
@@ -137,7 +137,7 @@ namespace BRP
             bottom.position=center+rotation*new Vector3(-bottom.rect.width*scale*.5f,bottom.rect.height*scale*.5f,0);
         }
 
-        void AttachVRControl(RectTransform panel,Vector2 position)
+        void AttachVRControl(RectTransform panel,Vector2 position,Vector2 size)
         {
             if(vrHeadControls==null)
             {
@@ -149,7 +149,14 @@ namespace BRP
                 overlay.AddComponent<UnityEngine.XR.Interaction.Toolkit.UI.TrackedDeviceGraphicRaycaster>();
             }
             panel.SetParent(vrHeadControls,false);panel.anchorMin=panel.anchorMax=new Vector2(0,1);panel.pivot=new Vector2(0,1);
-            panel.anchoredPosition=position;panel.localRotation=Quaternion.identity;panel.localScale=Vector3.one;
+            panel.anchoredPosition=position;panel.sizeDelta=size;panel.localRotation=Quaternion.identity;panel.localScale=Vector3.one;
+            var label=panel.GetComponentInChildren<TextMeshProUGUI>();
+            if(label!=null) {label.rectTransform.sizeDelta=new Vector2(size.x-12,size.y);label.fontSize=size.x<100?32:25;label.alignment=TextAlignmentOptions.Center;}
+            var button=panel.GetComponent<LabButton>();
+            if(button!=null&&button.accent!=null)
+            {
+                var accent=button.accent.rectTransform;accent.anchoredPosition=new Vector2(0,-(size.y-2));accent.sizeDelta=new Vector2(size.x,2);
+            }
         }
 
         public void AttachVRCaption(RectTransform panel,Vector2 position)
