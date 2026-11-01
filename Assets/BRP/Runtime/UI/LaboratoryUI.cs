@@ -42,11 +42,11 @@ namespace BRP
 
         public void ConfigureVR(Camera camera)
         {
-            canvas.renderMode=RenderMode.ScreenSpaceCamera;canvas.worldCamera=camera;canvas.planeDistance=Mathf.Max(camera.nearClipPlane+.02f,.12f);
+            canvas.renderMode=RenderMode.WorldSpace;canvas.worldCamera=camera;
             vrCamera=camera.transform;
-            root.SetParent(null,false);root.localPosition=Vector3.zero;root.localRotation=Quaternion.identity;
-            root.sizeDelta=new Vector2(1920,1080);root.localScale=Vector3.one;
-            PlaceVRPanel(homePanel,44,154);
+            root.SetParent(null,false);root.sizeDelta=new Vector2(1920,1080);root.localScale=Vector3.one*.0012f;
+            SetVRObserver();
+            PlaceVRPanel(homePanel,635,154);
             var homeBackground=homePanel.GetComponent<Image>();
             homeBackground.color=new Color(.025f,.035f,.04f,1f);
             PlaceVRPanel(left,24,156);
@@ -80,7 +80,15 @@ namespace BRP
         public void SetVRObserver()
         {
             if(canvas.renderMode!=RenderMode.WorldSpace||vrCamera==null) return;
-            root.SetPositionAndRotation(vrCamera.position,vrCamera.rotation);
+            if(!game.IsFlying)
+            {
+                var bench=game.Assembly.assemblyRoot.position;
+                root.SetPositionAndRotation(new Vector3(bench.x,1.75f,bench.z-1.55f),Quaternion.identity);
+                return;
+            }
+            var forward=Vector3.ProjectOnPlane(vrCamera.forward,Vector3.up).normalized;
+            if(forward.sqrMagnitude<.01f) forward=Vector3.forward;
+            root.SetPositionAndRotation(vrCamera.position+forward*1.6f,Quaternion.LookRotation(forward,Vector3.up));
         }
 
         void PlaceVRPanel(RectTransform panel,float x,float y)
