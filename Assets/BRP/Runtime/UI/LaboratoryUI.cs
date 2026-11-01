@@ -36,6 +36,7 @@ namespace BRP
         bool navigationExpanded,mapView;
         bool wasFlying;
         Transform vrCamera;
+        RectTransform vrCaptions;
         PartCategory category;
         public bool ModalOpen=>modal!=null||(homePanel!=null&&homePanel.gameObject.activeSelf);
         public bool MapView=>mapView;
@@ -49,10 +50,10 @@ namespace BRP
             PlaceVRPanel(homePanel,635,154);
             var homeBackground=homePanel.GetComponent<Image>();
             homeBackground.color=new Color(.025f,.035f,.04f,1f);
-            PlaceVRPanel(left,24,156);
-            PlaceVRPanel(right,1572,156);
-            PlaceVRPanel(flightPanel,24,156);
-            PlaceVRPanel(flightSystems,1572,156);
+            PlaceVRPanel(left,-28,115);left.localScale=Vector3.one*1.22f;
+            PlaceVRPanel(right,1553,115);right.localScale=Vector3.one*1.22f;
+            PlaceVRPanel(flightPanel,-28,115);flightPanel.localScale=Vector3.one*1.22f;
+            PlaceVRPanel(flightSystems,1553,115);flightSystems.localScale=Vector3.one*1.22f;
             PlaceVRPanel(bottom,373,840);
             PlaceVRPanel(flightActions,373,840);
             var navigation=root.Find("Navigation") as RectTransform;
@@ -64,7 +65,7 @@ namespace BRP
             PlaceVRPanel(toast.rectTransform,430,220);
             if(controlHint!=null)
             {
-                PlaceVRPanel(controlHint.rectTransform,1070,1045);
+                AttachVRCaption(controlHint.rectTransform,new Vector2(190,-130));
                 controlHint.alignment=TextAlignmentOptions.Center;
             }
             phase.gameObject.SetActive(false);status.gameObject.SetActive(false);
@@ -95,6 +96,21 @@ namespace BRP
         {
             panel.localRotation=Quaternion.identity;panel.localScale=Vector3.one;
             panel.anchoredPosition=new Vector2(x,-y);
+        }
+
+        public void AttachVRCaption(RectTransform panel,Vector2 position)
+        {
+            if(vrCaptions==null)
+            {
+                var overlay=new GameObject("VR captions",typeof(RectTransform),typeof(Canvas));
+                overlay.layer=gameObject.layer;
+                vrCaptions=overlay.GetComponent<RectTransform>();vrCaptions.SetParent(vrCamera,false);
+                vrCaptions.localPosition=new Vector3(0,-.34f,1.2f);vrCaptions.localRotation=Quaternion.identity;
+                vrCaptions.localScale=Vector3.one*.0008f;vrCaptions.sizeDelta=new Vector2(1200,200);
+                var captionCanvas=overlay.GetComponent<Canvas>();captionCanvas.renderMode=RenderMode.WorldSpace;captionCanvas.worldCamera=canvas.worldCamera;
+            }
+            panel.SetParent(vrCaptions,false);panel.anchorMin=panel.anchorMax=new Vector2(0,1);panel.pivot=new Vector2(0,1);
+            panel.anchoredPosition=position;panel.localRotation=Quaternion.identity;panel.localScale=Vector3.one;
         }
 
         public void SetAssemblyPanelsVisible(bool visible)

@@ -162,9 +162,7 @@ namespace BRP
 
         void PositionVR()
         {
-            vrPanelPositioned=true;panel.anchorMin=panel.anchorMax=new Vector2(0,1);panel.pivot=new Vector2(0,1);
-            panel.anchoredPosition=new Vector2(340,-140);panel.sizeDelta=new Vector2(1240,76);
-            panel.localRotation=Quaternion.identity;panel.localScale=Vector3.one;
+            vrPanelPositioned=true;game.UI.AttachVRCaption(panel,new Vector2(0,-10));panel.sizeDelta=new Vector2(1200,76);
             instruction.fontSize=22;instruction.enableAutoSizing=true;instruction.fontSizeMin=19;instruction.fontSizeMax=22;
             instruction.alignment=TextAlignmentOptions.Center;
         }

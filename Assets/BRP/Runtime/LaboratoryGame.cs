@@ -278,7 +278,7 @@ namespace BRP
             {
                 xrRig.transform.SetPositionAndRotation(FlightObserver,FlightObserverRotation);
                 UI.SetVRObserver();
-                mainCamera.cullingMask=(1<<29)|(1<<5);presentation.immersiveVR=true;
+                mainCamera.cullingMask=VRFlightMask();presentation.immersiveVR=true;
                 presentation.Initialize(Flight,Assets,mainCamera);
             }
             else {mainCamera.cullingMask=(1<<29)|(1<<5);presentation.Initialize(Flight,Assets,mainCamera);}
@@ -314,6 +314,12 @@ namespace BRP
         {
             if(!vrEnabled||xrRig==null) return;
             foreach(var provider in xrRig.GetComponentsInChildren<UnityEngine.XR.Interaction.Toolkit.Locomotion.LocomotionProvider>(true)) provider.enabled=enabled;
+        }
+        int VRFlightMask()
+        {
+            int mask=(1<<29)|(1<<5);
+            if(xrRig!=null) foreach(var renderer in xrRig.GetComponentsInChildren<Renderer>(true)) mask|=1<<renderer.gameObject.layer;
+            return mask;
         }
         public void NextStage()
         {
@@ -536,7 +542,7 @@ namespace BRP
             {
                 xrRig.transform.SetPositionAndRotation(FlightObserver,FlightObserverRotation);
                 UI.SetVRObserver();
-                mainCamera.cullingMask=(1<<29)|(1<<5);presentation.viewCamera=mainCamera;presentation.immersiveVR=true;
+                mainCamera.cullingMask=VRFlightMask();presentation.viewCamera=mainCamera;presentation.immersiveVR=true;
                 SetLocomotion(false);if(presentation.map) ConfigureMapView();
             }
             Toast("VR включён. Используйте луч для панелей и захват для деталей.");
