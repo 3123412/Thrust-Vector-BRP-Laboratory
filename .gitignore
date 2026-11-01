@@ -26,3 +26,5 @@ Tools/.packages/
 .cache/
 __pycache__/
 *.py[cod]
+*.md
+!/README.md
