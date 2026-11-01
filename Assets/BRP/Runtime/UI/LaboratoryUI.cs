@@ -36,7 +36,7 @@ namespace BRP
         bool navigationExpanded,mapView;
         bool wasFlying;
         Transform vrCamera;
-        RectTransform vrCaptions;
+        RectTransform vrCaptions,vrHeadControls;
         PartCategory category;
         public bool ModalOpen=>modal!=null||(homePanel!=null&&homePanel.gameObject.activeSelf);
         public bool MapView=>mapView;
@@ -58,6 +58,9 @@ namespace BRP
             var navigation=root.Find("Navigation") as RectTransform;
             if(navigation!=null) navigation.gameObject.SetActive(false);
             if(vrMenu==null) vrMenu=UiTheme.Command(root,"Меню",24,20,180,64,"home").gameObject;
+            AttachVRControl(vrMenu.GetComponent<RectTransform>(),new Vector2(20,-10));
+            if(scaleDown!=null) AttachVRControl(scaleDown.GetComponent<RectTransform>(),new Vector2(1020,-10));
+            if(scaleUp!=null) AttachVRControl(scaleUp.GetComponent<RectTransform>(),new Vector2(1080,-10));
             vrMenu.SetActive(!ModalOpen);
             if(mapTools!=null) PlaceVRPanel(mapTools,373,771);
             if(flightMenu!=null) PlaceVRPanel(flightMenu.GetComponent<RectTransform>(),1720,20);
@@ -65,7 +68,7 @@ namespace BRP
             if(controlHint!=null)
             {
                 AttachVRCaption(controlHint.rectTransform,new Vector2(100,-130));
-                controlHint.rectTransform.sizeDelta=new Vector2(1000,52);controlHint.fontSize=32;
+                controlHint.rectTransform.sizeDelta=new Vector2(1000,52);controlHint.fontSize=22;
                 controlHint.alignment=TextAlignmentOptions.Center;
             }
             SetVRObserver();
@@ -89,6 +92,7 @@ namespace BRP
                 var observer=new Vector3(bench.x,1.6f,bench.z-2.4f);
                 PlaceWorkshopPanel(left,new Vector3(bench.x-1.3f,1.95f,bench.z),observer);
                 PlaceWorkshopPanel(right,new Vector3(bench.x+1.3f,1.95f,bench.z),observer);
+                PlaceWorkshopControls(new Vector3(bench.x+1.3f,1.055f,bench.z));
                 return;
             }
             var forward=Vector3.ProjectOnPlane(vrCamera.forward,Vector3.up).normalized;
@@ -111,6 +115,41 @@ namespace BRP
         {
             panel.localRotation=Quaternion.identity;panel.localScale=Vector3.one;
             panel.anchoredPosition=new Vector2(x,-y);
+        }
+
+        void PlaceWorkshopControls(Vector3 center)
+        {
+            bottom.sizeDelta=new Vector2(520,400);
+            var buttons=bottom.GetComponentsInChildren<LabButton>(true);
+            for(int i=0;i<buttons.Length;i++)
+            {
+                var rect=buttons[i].GetComponent<RectTransform>();
+                rect.anchoredPosition=new Vector2(10+(i%2)*255,-(10+(i/2)*96));rect.sizeDelta=new Vector2(245,84);
+                var label=buttons[i].GetComponentInChildren<TextMeshProUGUI>();
+                if(label!=null) {label.rectTransform.sizeDelta=new Vector2(233,84);label.fontSize=21;label.alignment=TextAlignmentOptions.Center;}
+                if(buttons[i].accent!=null)
+                {
+                    var accent=buttons[i].accent.rectTransform;accent.anchoredPosition=new Vector2(0,-82);accent.sizeDelta=new Vector2(245,2);
+                }
+            }
+            var rotation=Quaternion.Euler(90,0,0);bottom.localScale=Vector3.one*.85f;bottom.rotation=rotation;
+            float scale=root.lossyScale.x*.85f;
+            bottom.position=center+rotation*new Vector3(-bottom.rect.width*scale*.5f,bottom.rect.height*scale*.5f,0);
+        }
+
+        void AttachVRControl(RectTransform panel,Vector2 position)
+        {
+            if(vrHeadControls==null)
+            {
+                var overlay=new GameObject("VR head controls",typeof(RectTransform),typeof(Canvas));overlay.layer=gameObject.layer;
+                vrHeadControls=overlay.GetComponent<RectTransform>();vrHeadControls.SetParent(vrCamera,false);
+                vrHeadControls.localPosition=new Vector3(0,.3f,1.1f);vrHeadControls.localRotation=Quaternion.identity;
+                vrHeadControls.localScale=Vector3.one*.001f;vrHeadControls.sizeDelta=new Vector2(1200,100);
+                var headCanvas=overlay.GetComponent<Canvas>();headCanvas.renderMode=RenderMode.WorldSpace;headCanvas.worldCamera=canvas.worldCamera;
+                overlay.AddComponent<UnityEngine.XR.Interaction.Toolkit.UI.TrackedDeviceGraphicRaycaster>();
+            }
+            panel.SetParent(vrHeadControls,false);panel.anchorMin=panel.anchorMax=new Vector2(0,1);panel.pivot=new Vector2(0,1);
+            panel.anchoredPosition=position;panel.localRotation=Quaternion.identity;panel.localScale=Vector3.one;
         }
 
         public void AttachVRCaption(RectTransform panel,Vector2 position)
