@@ -46,7 +46,6 @@ namespace BRP
             canvas.renderMode=RenderMode.WorldSpace;canvas.worldCamera=camera;
             vrCamera=camera.transform;
             root.SetParent(null,false);root.sizeDelta=new Vector2(1920,1080);root.localScale=Vector3.one*.0012f;
-            SetVRObserver();
             PlaceVRPanel(homePanel,635,154);
             var homeBackground=homePanel.GetComponent<Image>();
             homeBackground.color=new Color(.025f,.035f,.04f,1f);
@@ -65,9 +64,11 @@ namespace BRP
             PlaceVRPanel(toast.rectTransform,430,220);
             if(controlHint!=null)
             {
-                AttachVRCaption(controlHint.rectTransform,new Vector2(190,-130));
+                AttachVRCaption(controlHint.rectTransform,new Vector2(100,-130));
+                controlHint.rectTransform.sizeDelta=new Vector2(1000,52);controlHint.fontSize=32;
                 controlHint.alignment=TextAlignmentOptions.Center;
             }
+            SetVRObserver();
             phase.gameObject.SetActive(false);status.gameObject.SetActive(false);
             missionTitle.gameObject.SetActive(false);missionGoal.gameObject.SetActive(false);
             foreach(var label in FindObjectsByType<TMP_Text>(FindObjectsSortMode.None))
@@ -85,11 +86,25 @@ namespace BRP
             {
                 var bench=game.Assembly.assemblyRoot.position;
                 root.SetPositionAndRotation(new Vector3(bench.x,1.75f,bench.z-1.55f),Quaternion.identity);
+                var observer=new Vector3(bench.x,1.6f,bench.z-2.4f);
+                PlaceWorkshopPanel(left,new Vector3(bench.x-1.3f,1.95f,bench.z),observer);
+                PlaceWorkshopPanel(right,new Vector3(bench.x+1.3f,1.95f,bench.z),observer);
                 return;
             }
             var forward=Vector3.ProjectOnPlane(vrCamera.forward,Vector3.up).normalized;
             if(forward.sqrMagnitude<.01f) forward=Vector3.forward;
             root.SetPositionAndRotation(vrCamera.position+forward*1.6f,Quaternion.LookRotation(forward,Vector3.up));
+            PlaceVRPanel(flightPanel,-28,115);flightPanel.localScale=Vector3.one*1.22f;
+            PlaceVRPanel(flightSystems,1553,115);flightSystems.localScale=Vector3.one*1.22f;
+        }
+
+        void PlaceWorkshopPanel(RectTransform panel,Vector3 center,Vector3 observer)
+        {
+            var direction=Vector3.ProjectOnPlane(center-observer,Vector3.up).normalized;
+            var rotation=Quaternion.LookRotation(direction,Vector3.up);
+            panel.localScale=Vector3.one*1.95f;panel.rotation=rotation;
+            float scale=root.lossyScale.x*1.95f;
+            panel.position=center+rotation*new Vector3(-panel.rect.width*scale*.5f,panel.rect.height*scale*.5f,0);
         }
 
         void PlaceVRPanel(RectTransform panel,float x,float y)
@@ -105,8 +120,8 @@ namespace BRP
                 var overlay=new GameObject("VR captions",typeof(RectTransform),typeof(Canvas));
                 overlay.layer=gameObject.layer;
                 vrCaptions=overlay.GetComponent<RectTransform>();vrCaptions.SetParent(vrCamera,false);
-                vrCaptions.localPosition=new Vector3(0,-.34f,1.2f);vrCaptions.localRotation=Quaternion.identity;
-                vrCaptions.localScale=Vector3.one*.0008f;vrCaptions.sizeDelta=new Vector2(1200,200);
+                vrCaptions.localPosition=new Vector3(0,-.28f,1f);vrCaptions.localRotation=Quaternion.identity;
+                vrCaptions.localScale=Vector3.one*.0014f;vrCaptions.sizeDelta=new Vector2(1200,200);
                 var captionCanvas=overlay.GetComponent<Canvas>();captionCanvas.renderMode=RenderMode.WorldSpace;captionCanvas.worldCamera=canvas.worldCamera;
             }
             panel.SetParent(vrCaptions,false);panel.anchorMin=panel.anchorMax=new Vector2(0,1);panel.pivot=new Vector2(0,1);

@@ -162,8 +162,8 @@ namespace BRP
 
         void PositionVR()
         {
-            vrPanelPositioned=true;game.UI.AttachVRCaption(panel,new Vector2(0,-10));panel.sizeDelta=new Vector2(1200,76);
-            instruction.fontSize=22;instruction.enableAutoSizing=true;instruction.fontSizeMin=19;instruction.fontSizeMax=22;
+            vrPanelPositioned=true;game.UI.AttachVRCaption(panel,new Vector2(0,-5));panel.sizeDelta=new Vector2(1200,105);
+            instruction.fontSize=38;instruction.enableAutoSizing=true;instruction.fontSizeMin=32;instruction.fontSizeMax=38;
             instruction.alignment=TextAlignmentOptions.Center;
         }
 
