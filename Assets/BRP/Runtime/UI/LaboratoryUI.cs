@@ -34,6 +34,7 @@ namespace BRP
         Action dialogClosed;
         bool navigationExpanded,mapView;
         bool wasFlying;
+        Transform vrCamera;
         PartCategory category;
         public bool ModalOpen=>modal!=null||(homePanel!=null&&homePanel.gameObject.activeSelf);
         public bool MapView=>mapView;
@@ -41,33 +42,36 @@ namespace BRP
         public void ConfigureVR(Camera camera)
         {
             canvas.renderMode=RenderMode.WorldSpace;canvas.worldCamera=camera;
-            root.sizeDelta=new Vector2(1920,1080);root.position=new Vector3(-1.92f,3.05f,1.45f);
-            root.rotation=Quaternion.identity;root.localScale=Vector3.one*.002f;
-            PlaceVRPanel(left,new Vector3(-1.2f,1.65f,-.65f),-32,.0024f);
-            PlaceVRPanel(right,new Vector3(1.2f,1.65f,-.65f),32,.0024f);
-            PlaceVRPanel(flightPanel,new Vector3(-1.2f,1.65f,-.65f),-32,.0024f);
-            PlaceVRPanel(flightSystems,new Vector3(1.2f,1.65f,-.65f),32,.0024f);
-            PlaceVRPanel(bottom,new Vector3(0,1.02f,-1.5f),0,.0017f);
-            PlaceVRPanel(flightActions,new Vector3(0,1.02f,-1.5f),0,.0017f);
+            vrCamera=camera.transform;
+            root.SetParent(vrCamera,false);root.localPosition=Vector3.zero;root.localRotation=Quaternion.identity;
+            root.sizeDelta=new Vector2(1920,1080);root.localScale=Vector3.one;
+            PlaceVRPanel(homePanel,new Vector3(-.85f,.3f,1.8f),0,.00155f);
+            var homeBackground=homePanel.GetComponent<Image>();
+            homeBackground.color=new Color(.025f,.035f,.04f,1f);
+            PlaceVRPanel(left,new Vector3(-.82f,.02f,1.65f),10,.00135f);
+            PlaceVRPanel(right,new Vector3(.82f,.02f,1.65f),-10,.00135f);
+            PlaceVRPanel(flightPanel,new Vector3(-.82f,.02f,1.65f),10,.00135f);
+            PlaceVRPanel(flightSystems,new Vector3(.82f,.02f,1.65f),-10,.00135f);
+            PlaceVRPanel(bottom,new Vector3(0,-.65f,1.72f),0,.0011f);
+            PlaceVRPanel(flightActions,new Vector3(0,-.65f,1.72f),0,.0011f);
             var navigation=root.Find("Navigation") as RectTransform;
-            if(navigation!=null) PlaceVRPanel(navigation,new Vector3(0,2.6f,-.4f),0,.0013f);
-            if(mapTools!=null) PlaceVRPanel(mapTools,new Vector3(0,1.25f,-.7f),0,.0017f);
-            if(flightMenu!=null) PlaceVRPanel(flightMenu.GetComponent<RectTransform>(),new Vector3(.75f,2.35f,-.5f),0,.0018f);
+            if(navigation!=null) PlaceVRPanel(navigation,new Vector3(0,.98f,1.95f),0,.0012f);
+            if(mapTools!=null) PlaceVRPanel(mapTools,new Vector3(0,-.23f,1.65f),0,.0011f);
+            if(flightMenu!=null) PlaceVRPanel(flightMenu.GetComponent<RectTransform>(),new Vector3(0,.66f,1.65f),0,.0012f);
             GetComponent<GraphicRaycaster>().enabled=false;
         }
 
-        public void SetVRObserver(Vector3 origin,Quaternion rotation)
+        public void SetVRObserver()
         {
-            if(canvas.renderMode!=RenderMode.WorldSpace) return;
-            root.position=origin+rotation*(new Vector3(-1.92f,3.05f,1.45f)-new Vector3(0,0,-2.4f));
-            root.rotation=rotation;
+            if(canvas.renderMode!=RenderMode.WorldSpace||vrCamera==null) return;
+            root.SetPositionAndRotation(vrCamera.position,vrCamera.rotation);
         }
 
         void PlaceVRPanel(RectTransform panel,Vector3 center,float yaw,float scale)
         {
             var rotation=Quaternion.Euler(0,yaw,0);
-            panel.rotation=rotation;panel.localScale=Vector3.one*(scale/root.lossyScale.x);
-            panel.position=center+rotation*new Vector3(-panel.rect.width*scale*.5f,panel.rect.height*scale*.5f,0);
+            panel.localRotation=rotation;panel.localScale=Vector3.one*scale;
+            panel.localPosition=center+rotation*new Vector3(-panel.rect.width*scale*.5f,panel.rect.height*scale*.5f,0);
         }
 
         public void Initialize(LaboratoryGame owner,TMP_FontAsset font)
@@ -416,6 +420,7 @@ namespace BRP
         {
             CloseDialog();
             modal=UiTheme.Panel("ModalShade",root,0,98,1920,942,new Color(.01f,.02f,.03f,.82f));
+            if(canvas.renderMode==RenderMode.WorldSpace) PlaceVRPanel(modal,new Vector3(0,0,1.35f),0,.0008f);
             var panel=UiTheme.Panel("Dialog",modal,(1920-width)/2,(942-height)/2,width,height,UiTheme.Ink);
             UiTheme.Panel("Accent",panel,0,0,4,60,UiTheme.Orange);
             UiTheme.Text(panel,title,30,24,width-100,40,26);
@@ -432,7 +437,10 @@ namespace BRP
         }
         public void ShowHome()
         {
-            CloseDialog();homePanel.gameObject.SetActive(true);
+            CloseDialog();
+            foreach(var label in homePanel.GetComponentsInChildren<TextMeshProUGUI>(true))
+                if(label.text=="VR определяется автоматически при запуске") Destroy(label.gameObject);
+            homePanel.gameObject.SetActive(true);
             if(homeContinue!=null) homeContinue.GetComponentInChildren<TextMeshProUGUI>().text=game.IsFlying?"Продолжить полёт  →":"Продолжить программу  →";
             if(!game.VREnabled)
             {

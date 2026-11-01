@@ -1,7 +1,9 @@
 ﻿$ErrorActionPreference='Stop'
 Set-Location 'C:/Developing/My project'
 function Invoke-BrpShot([string]$Code,[int]$Seconds,[string]$Label) {
-    $response=unity command script eval --caller plugin --skill unity-cli --project-path 'C:/Developing/My project' --format json -- $Code --timeout 120 | ConvertFrom-Json
+    $codePath=Join-Path (Get-Location) 'Temp/showcase-command.cs'
+    [System.IO.File]::WriteAllText($codePath,$Code,[System.Text.UTF8Encoding]::new($false))
+    $response=unity command script eval_file --caller plugin --skill unity-cli --project-path 'C:/Developing/My project' --format json --timeout 120 -- $codePath | ConvertFrom-Json
     if(-not $response.success -or -not $response.data.result.success) { throw ($response | ConvertTo-Json -Depth 8) }
     Write-Output $Label
     if($Seconds -gt 0) { Start-Sleep -Seconds $Seconds }

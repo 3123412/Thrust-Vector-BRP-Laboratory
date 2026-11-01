@@ -277,7 +277,7 @@ namespace BRP
             if(vrEnabled)
             {
                 xrRig.transform.SetPositionAndRotation(FlightObserver,FlightObserverRotation);
-                UI.SetVRObserver(FlightObserver,FlightObserverRotation);
+                UI.SetVRObserver();
                 mainCamera.cullingMask=(1<<29)|(1<<5);presentation.immersiveVR=true;
                 presentation.Initialize(Flight,Assets,mainCamera);
             }
@@ -302,7 +302,7 @@ namespace BRP
             if(vrEnabled&&xrRig!=null)
             {
                 xrRig.transform.SetPositionAndRotation(workshopRigPosition,workshopRigRotation);
-                UI.SetVRObserver(new Vector3(0,0,-2.4f),Quaternion.identity);
+                UI.SetVRObserver();
             }
             if(Assets!=null) {RenderSettings.skybox=Assets.skyMaterial;Assets.skyMaterial.SetFloat("_Atmosphere",1);Assets.skyMaterial.SetFloat("_SunVisibility",1);RenderSettings.fog=true;}
             if(comLine!=null) comLine.gameObject.SetActive(true);
@@ -469,24 +469,52 @@ namespace BRP
         {
             if(vrEnabled) yield break;
             var manager=XRGeneralSettings.Instance?.Manager;
-            if(manager==null||Assets.xrRig==null) {if(!automatic) Toast("Проверьте OpenXR runtime и подключение контроллеров");yield break;}
-            if(!automatic) Toast("Подключение OpenXR…");
-            if(manager.activeLoader==null) yield return manager.InitializeLoader();
-            if(manager.activeLoader==null) {if(!automatic) Toast("Режим ПК. OpenXR runtime недоступен.");yield break;}
-            manager.StartSubsystems();
-            var displays=new List<UnityEngine.XR.XRDisplaySubsystem>();
-            bool running=false;
-            for(int attempt=0;attempt<12&&!running;attempt++)
+            bool simulated=Application.isEditor&&UnityEngine.XR.Interaction.Toolkit.Inputs.Simulation.XRInteractionSimulator.instance!=null;
+            if(Assets.xrRig==null||manager==null&&!simulated) {if(!automatic) Toast("Проверьте OpenXR runtime и подключение контроллеров");yield break;}
+            if(!simulated)
             {
-                UnityEngine.SubsystemManager.GetSubsystems(displays);running=displays.Any(display=>display.running);
-                if(!running) yield return new WaitForSecondsRealtime(.25f);
+                if(!automatic) Toast("Подключение OpenXR…");
+                if(manager.activeLoader==null) yield return manager.InitializeLoader();
+                if(manager.activeLoader==null) {if(!automatic) Toast("Режим ПК. OpenXR runtime недоступен.");yield break;}
+                manager.StartSubsystems();
             }
-            if(!running) {manager.StopSubsystems();manager.DeinitializeLoader();if(!automatic) Toast("Шлем не обнаружен. Включён режим ПК.");yield break;}
+            var displays=new List<UnityEngine.XR.XRDisplaySubsystem>();
+            bool running=simulated,headset=false;
+            for(int attempt=0;attempt<12&&(!running||!headset);attempt++)
+            {
+                if(!simulated)
+                {
+                    UnityEngine.SubsystemManager.GetSubsystems(displays);
+                    running=displays.Any(display=>display.running);
+                }
+                headset=UnityEngine.InputSystem.InputSystem.devices.Any(device=>device is UnityEngine.InputSystem.XR.XRHMD);
+                if(!running||!headset) yield return new WaitForSecondsRealtime(.25f);
+            }
+            if(!running||!headset)
+            {
+                if(!simulated) {manager.StopSubsystems();manager.DeinitializeLoader();}
+                if(!automatic) Toast("Шлем не обнаружен. Включён режим ПК.");
+                yield break;
+            }
             vrEnabled=true;mainCamera.gameObject.SetActive(false);
             Application.targetFrameRate=-1;QualitySettings.vSyncCount=0;
             if(xrRig==null) xrRig=Instantiate(Assets.xrRig);
             xrRig.SetActive(true);xrRig.transform.position=new Vector3(0,0,-2.4f);
             var camera=xrRig.GetComponentInChildren<Camera>();if(camera!=null) mainCamera=camera;
+            if(simulated)
+            {
+                var simulator=UnityEngine.XR.Interaction.Toolkit.Inputs.Simulation.XRInteractionSimulator.instance;
+                var modality=xrRig.GetComponentInChildren<UnityEngine.XR.Interaction.Toolkit.Inputs.XRInputModalityManager>(true);
+                if(simulator!=null)
+                {
+                    simulator.cameraTransform=mainCamera.transform;
+                    var leftPose=modality?.leftController?.GetComponentInChildren<UnityEngine.InputSystem.XR.TrackedPoseDriver>(true);
+                    var rightPose=modality?.rightController?.GetComponentInChildren<UnityEngine.InputSystem.XR.TrackedPoseDriver>(true);
+                    if(leftPose!=null) simulator.leftControllerTransform=leftPose.transform;
+                    if(rightPose!=null) simulator.rightControllerTransform=rightPose.transform;
+                    simulator.enabled=false;simulator.enabled=true;
+                }
+            }
             mainCamera.cullingMask&=~(1<<29);ScaleAssembly(.55f);
             UI.ConfigureVR(mainCamera);
             QualitySettings.SetQualityLevel(1,true);
@@ -499,7 +527,7 @@ namespace BRP
             if(IsFlying&&presentation!=null)
             {
                 xrRig.transform.SetPositionAndRotation(FlightObserver,FlightObserverRotation);
-                UI.SetVRObserver(FlightObserver,FlightObserverRotation);
+                UI.SetVRObserver();
                 mainCamera.cullingMask=(1<<29)|(1<<5);presentation.viewCamera=mainCamera;presentation.immersiveVR=true;
                 SetLocomotion(false);if(presentation.map) ConfigureMapView();
             }
