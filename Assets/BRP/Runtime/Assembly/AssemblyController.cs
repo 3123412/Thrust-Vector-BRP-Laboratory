@@ -113,7 +113,14 @@ namespace BRP
             var d=moving.Definition;
             void Consider(SnapTarget next)
             {
-                float distance=Vector3.Distance(moving.transform.position,assemblyRoot.TransformPoint(next.position));
+                Vector3 movingConnector=moving.transform.position;
+                Vector3 targetConnector=next.position;
+                if(next.port==1)
+                {
+                    movingConnector=moving.transform.TransformPoint(Vector3.up*d.height);
+                    targetConnector+=next.rotation*Vector3.up*d.height;
+                }
+                float distance=Vector3.Distance(movingConnector,assemblyRoot.TransformPoint(targetConnector));
                 if(distance>=best) return;
                 if(Quaternion.Angle(moving.transform.localRotation,next.rotation)>35) return;
                 best=distance;targetLocal=next;found=true;

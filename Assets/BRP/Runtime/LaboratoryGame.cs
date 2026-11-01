@@ -109,18 +109,29 @@ namespace BRP
             float scale=Mathf.Clamp(benchRoot.localScale.x*factor,.055f,.5f);
             if(Mathf.Abs(scale-benchRoot.localScale.x)<.0001f) return;
             benchRoot.localScale=Vector3.one*scale;
-            float bottom=Assembly.Blueprint.parts.Select(p=>p.position.y).DefaultIfEmpty(0).Min();
+            float bottom=AssemblyBottom();
             benchRoot.position=new Vector3(0,1.06f-bottom*scale,0);
             OnAssemblyChanged();
         }
         public void FitAssembly()
         {
             if(Assembly.Blueprint.parts.Count==0) return;
-            float bottom=Assembly.Blueprint.parts.Min(p=>p.position.y);
+            float bottom=AssemblyBottom();
             float top=Assembly.Blueprint.parts.Max(p=>p.position.y+Catalog.Find(p.partId).height);
             float scale=Mathf.Min(AssemblyController.Scale,2.5f/Mathf.Max(1,top-bottom));
             benchRoot.localScale=Vector3.one*scale;benchRoot.position=new Vector3(0,1.06f-bottom*scale,0);
             if(Application.isPlaying) OnAssemblyChanged();
+        }
+        float AssemblyBottom()
+        {
+            float bottom=Assembly.Blueprint.parts.Select(p=>p.position.y).DefaultIfEmpty(0).Min();
+            if(Assembly.Blueprint.parts.Any(p=>Catalog.Find(p.partId)?.IsEngine==true)) return bottom;
+            float engineHeight=Catalog.parts.Where(p=>p.IsEngine).Select(p=>p.height).DefaultIfEmpty(0).Max();
+            foreach(var part in Assembly.Blueprint.parts)
+            {
+                if(Catalog.Find(part.partId)?.IsStructural==true) bottom=Mathf.Min(bottom,part.position.y-engineHeight);
+            }
+            return bottom;
         }
 
         LineRenderer CreateLine(string name,Color color,float width)
@@ -518,7 +529,12 @@ namespace BRP
                         dragOffsets[item]=rotation*dragOffsets[item];item.transform.rotation=rotation*item.transform.rotation;
                     }
                 }
-                if(Assembly.TryTarget(dragging,out var target)) DrawSnap(benchRoot.TransformPoint(target.position));else snapMarker.positionCount=0;
+                if(Assembly.TryTarget(dragging,out var target))
+                {
+                    var connector=target.port==1?target.position+target.rotation*Vector3.up*dragging.Definition.height:target.position;
+                    DrawSnap(benchRoot.TransformPoint(connector));
+                }
+                else snapMarker.positionCount=0;
                 if(mouse.leftButton.wasReleasedThisFrame&&!mouse.leftButton.isPressed) EndDrag();
             }
             else if(mouse.leftButton.wasPressedThisFrame&&!EventSystem.current.IsPointerOverGameObject())
