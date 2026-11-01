@@ -522,8 +522,16 @@ namespace BRP
             if(cameraData!=null) cameraData.renderPostProcessing=false;
             var raycaster=UI.gameObject.AddComponent<UnityEngine.XR.Interaction.Toolkit.UI.TrackedDeviceGraphicRaycaster>();
             var eventSystem=FindAnyObjectByType<EventSystem>();
-            var old=eventSystem.GetComponent<InputSystemUIInputModule>();if(old!=null) Destroy(old);
-            eventSystem.gameObject.AddComponent<UnityEngine.XR.Interaction.Toolkit.UI.XRUIInputModule>();
+            var old=eventSystem.GetComponent<InputSystemUIInputModule>();
+            if(old!=null)
+            {
+                old.enabled=false;Destroy(old);
+                yield return null;
+            }
+            eventSystem.SetSelectedGameObject(null);
+            var xrInputModule=eventSystem.GetComponent<UnityEngine.XR.Interaction.Toolkit.UI.XRUIInputModule>();
+            if(xrInputModule==null) xrInputModule=eventSystem.gameObject.AddComponent<UnityEngine.XR.Interaction.Toolkit.UI.XRUIInputModule>();
+            xrInputModule.enabled=true;
             if(IsFlying&&presentation!=null)
             {
                 xrRig.transform.SetPositionAndRotation(FlightObserver,FlightObserverRotation);

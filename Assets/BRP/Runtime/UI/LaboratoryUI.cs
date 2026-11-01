@@ -41,23 +41,36 @@ namespace BRP
 
         public void ConfigureVR(Camera camera)
         {
-            canvas.renderMode=RenderMode.WorldSpace;canvas.worldCamera=camera;
+            canvas.renderMode=RenderMode.ScreenSpaceCamera;canvas.worldCamera=camera;canvas.planeDistance=1.15f;
             vrCamera=camera.transform;
-            root.SetParent(vrCamera,false);root.localPosition=Vector3.zero;root.localRotation=Quaternion.identity;
+            root.SetParent(null,false);root.localPosition=Vector3.zero;root.localRotation=Quaternion.identity;
             root.sizeDelta=new Vector2(1920,1080);root.localScale=Vector3.one;
-            PlaceVRPanel(homePanel,new Vector3(-.85f,.3f,1.8f),0,.00155f);
+            PlaceVRPanel(homePanel,44,154);
             var homeBackground=homePanel.GetComponent<Image>();
             homeBackground.color=new Color(.025f,.035f,.04f,1f);
-            PlaceVRPanel(left,new Vector3(-.82f,.02f,1.65f),10,.00135f);
-            PlaceVRPanel(right,new Vector3(.82f,.02f,1.65f),-10,.00135f);
-            PlaceVRPanel(flightPanel,new Vector3(-.82f,.02f,1.65f),10,.00135f);
-            PlaceVRPanel(flightSystems,new Vector3(.82f,.02f,1.65f),-10,.00135f);
-            PlaceVRPanel(bottom,new Vector3(0,-.65f,1.72f),0,.0011f);
-            PlaceVRPanel(flightActions,new Vector3(0,-.65f,1.72f),0,.0011f);
+            PlaceVRPanel(left,24,156);
+            PlaceVRPanel(right,1572,156);
+            PlaceVRPanel(flightPanel,24,156);
+            PlaceVRPanel(flightSystems,1572,156);
+            PlaceVRPanel(bottom,373,840);
+            PlaceVRPanel(flightActions,373,840);
             var navigation=root.Find("Navigation") as RectTransform;
-            if(navigation!=null) PlaceVRPanel(navigation,new Vector3(0,.98f,1.95f),0,.0012f);
-            if(mapTools!=null) PlaceVRPanel(mapTools,new Vector3(0,-.23f,1.65f),0,.0011f);
-            if(flightMenu!=null) PlaceVRPanel(flightMenu.GetComponent<RectTransform>(),new Vector3(0,.66f,1.65f),0,.0012f);
+            if(navigation!=null) navigation.gameObject.SetActive(false);
+            if(mapTools!=null) PlaceVRPanel(mapTools,373,771);
+            if(flightMenu!=null) PlaceVRPanel(flightMenu.GetComponent<RectTransform>(),1720,20);
+            PlaceVRPanel(toast.rectTransform,430,220);
+            if(controlHint!=null)
+            {
+                PlaceVRPanel(controlHint.rectTransform,1070,1045);
+                controlHint.alignment=TextAlignmentOptions.Center;
+            }
+            phase.gameObject.SetActive(false);status.gameObject.SetActive(false);
+            missionTitle.gameObject.SetActive(false);missionGoal.gameObject.SetActive(false);
+            foreach(var label in FindObjectsByType<TMP_Text>(FindObjectsSortMode.None))
+            {
+                if(label.text.Contains("ОПЫТНОЕ КОНСТРУКТОРСКОЕ БЮРО")||label.text.Contains("01    /    СБОРКА")||label.text.Contains("ВНИМАНИЕ\nИСПЫТАТЕЛЬНАЯ ЗОНА"))
+                    label.gameObject.SetActive(false);
+            }
             GetComponent<GraphicRaycaster>().enabled=false;
         }
 
@@ -67,11 +80,20 @@ namespace BRP
             root.SetPositionAndRotation(vrCamera.position,vrCamera.rotation);
         }
 
-        void PlaceVRPanel(RectTransform panel,Vector3 center,float yaw,float scale)
+        void PlaceVRPanel(RectTransform panel,float x,float y)
         {
-            var rotation=Quaternion.Euler(0,yaw,0);
-            panel.localRotation=rotation;panel.localScale=Vector3.one*scale;
-            panel.localPosition=center+rotation*new Vector3(-panel.rect.width*scale*.5f,panel.rect.height*scale*.5f,0);
+            panel.localRotation=Quaternion.identity;panel.localScale=Vector3.one;
+            panel.anchoredPosition=new Vector2(x,-y);
+        }
+
+        public void SetAssemblyPanelsVisible(bool visible)
+        {
+            if(!visible)
+            {
+                foreach(var panel in new[]{left,right,bottom}) if(panel!=null) panel.gameObject.SetActive(false);
+                return;
+            }
+            if(!ModalOpen) SetFlight(game.IsFlying);
         }
 
         public void Initialize(LaboratoryGame owner,TMP_FontAsset font)
@@ -262,10 +284,10 @@ namespace BRP
             left.gameObject.SetActive(!active);right.gameObject.SetActive(!active);bottom.gameObject.SetActive(!active);
             flightPanel.gameObject.SetActive(active);flightActions.gameObject.SetActive(active);
             flightSystems.gameObject.SetActive(active);
-            if(navigation!=null) navigation.gameObject.SetActive(!active||navigationExpanded);
+            if(navigation!=null) navigation.gameObject.SetActive(!game.VREnabled&&(!active||navigationExpanded));
             if(flightMenu!=null)
             {
-                flightMenu.SetActive(active);flightMenu.GetComponentInChildren<TextMeshProUGUI>().text=navigationExpanded?"Скрыть панели":"Панели";
+                flightMenu.SetActive(active&&!game.VREnabled);flightMenu.GetComponentInChildren<TextMeshProUGUI>().text=navigationExpanded?"Скрыть панели":"Панели";
             }
             if(!game.VREnabled)
             {
@@ -278,7 +300,7 @@ namespace BRP
             if(scaleUp!=null) scaleUp.SetActive(!active);
             if(warpControl!=null) warpControl.SetActive(active&&!navigationExpanded);
             if(controlHint!=null) controlHint.text=game.VREnabled?"ЛУЧ  Кнопки     ХВАТ  Детали":active?"Shift / Ctrl  Тяга     Space  Ступень     M  Карта     T  Время":"ЛКМ  Выбор     ПКМ  Обзор     R  Поворот     Ctrl+Z  Отмена";
-            missionTitle.gameObject.SetActive(!active);missionGoal.gameObject.SetActive(!active);
+            missionTitle.gameObject.SetActive(!active&&!game.VREnabled);missionGoal.gameObject.SetActive(!active&&!game.VREnabled);
             phase.text=active?"КОСМОДРОМ     /     ПОЛЁТНЫЕ ИСПЫТАНИЯ":"АНГАР 01     /     ИНЖЕНЕРНАЯ СБОРКА";
             SetMapView(active&&mapView);
         }
@@ -420,7 +442,7 @@ namespace BRP
         {
             CloseDialog();
             modal=UiTheme.Panel("ModalShade",root,0,98,1920,942,new Color(.01f,.02f,.03f,.82f));
-            if(canvas.renderMode==RenderMode.WorldSpace) PlaceVRPanel(modal,new Vector3(0,0,1.35f),0,.0008f);
+            if(game.VREnabled) SetAssemblyPanelsVisible(false);
             var panel=UiTheme.Panel("Dialog",modal,(1920-width)/2,(942-height)/2,width,height,UiTheme.Ink);
             UiTheme.Panel("Accent",panel,0,0,4,60,UiTheme.Orange);
             UiTheme.Text(panel,title,30,24,width-100,40,26);
@@ -441,6 +463,8 @@ namespace BRP
             foreach(var label in homePanel.GetComponentsInChildren<TextMeshProUGUI>(true))
                 if(label.text=="VR определяется автоматически при запуске") Destroy(label.gameObject);
             homePanel.gameObject.SetActive(true);
+            foreach(var panel in new[]{left,right,bottom,flightPanel,flightSystems,flightActions,mapTools})
+                if(panel!=null) panel.gameObject.SetActive(false);
             if(homeContinue!=null) homeContinue.GetComponentInChildren<TextMeshProUGUI>().text=game.IsFlying?"Продолжить полёт  →":"Продолжить программу  →";
             if(!game.VREnabled)
             {

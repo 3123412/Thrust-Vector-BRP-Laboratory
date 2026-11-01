@@ -94,6 +94,7 @@ namespace BRP
         {
             if(context.definition==null||game.IsFlying) return;
             panel.gameObject.SetActive(true);panel.SetAsLastSibling();positionedVR=false;
+            game.UI.SetAssemblyPanelsVisible(false);
             BuildModels();SetCopy(purposeCopy,actionCopy,diagnosticCopy,subtitleCopy);
             if(game.VREnabled) PositionVR();
         }
@@ -102,6 +103,7 @@ namespace BRP
         {
             if(panel!=null) panel.gameObject.SetActive(false);
             if(studio!=null) studio.SetActive(false);
+            if(game!=null) game.UI.SetAssemblyPanelsVisible(true);
         }
 
         public void Rotate(Vector2 delta)
@@ -229,13 +231,9 @@ namespace BRP
 
         void PositionVR()
         {
-            var view=game.mainCamera.transform;
-            var forward=Vector3.ProjectOnPlane(view.forward,Vector3.up).normalized;if(forward.sqrMagnitude<.1f) forward=Vector3.forward;
-            var rotation=Quaternion.LookRotation(forward,Vector3.up);
-            const float scale=.00155f;
-            panel.rotation=rotation;panel.localScale=Vector3.one*(scale/game.UI.root.lossyScale.x);
-            Vector3 center=view.position+forward*1.7f+Vector3.up*.05f;
-            panel.position=center+rotation*new Vector3(-panel.rect.width*scale*.5f,panel.rect.height*scale*.5f,0);
+            panel.anchorMin=panel.anchorMax=new Vector2(0,1);panel.pivot=new Vector2(0,1);
+            panel.anchoredPosition=new Vector2(380,-184);panel.sizeDelta=new Vector2(1160,724);
+            panel.localRotation=Quaternion.identity;panel.localScale=Vector3.one;
             positionedVR=true;
         }
 
