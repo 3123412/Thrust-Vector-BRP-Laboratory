@@ -18,6 +18,12 @@ namespace BRP
     public sealed class AssemblyController : MonoBehaviour
     {
         public const float Scale = .34f;
+        public const float VRGridStep = .1f;
+        public const float VRGridRadius = .7f;
+        public const float VRGridFloor = 1.06f;
+        public const float VRGridCeiling = 3.46f;
+        const float VRNodeDistance = .18f;
+        const float VRGridReach = .15f;
         const float SnapTolerance = .56f;
         [field: SerializeField] public CraftBlueprint Blueprint { get; private set; } = new CraftBlueprint();
         [field: SerializeField] public PartCatalog Catalog { get; private set; }
@@ -28,6 +34,8 @@ namespace BRP
         readonly List<CraftBlueprint> undo = new List<CraftBlueprint>();
         readonly List<CraftBlueprint> redo = new List<CraftBlueprint>();
         readonly HashSet<string> detachedIds = new HashSet<string>();
+        readonly List<PartView> gridGroup = new List<PartView>();
+        readonly HashSet<(string parent,int port)> occupiedPorts = new HashSet<(string,int)>();
         public void Initialize(PartCatalog catalog,Transform root)
         {
             Catalog=catalog;assemblyRoot=root;
@@ -107,23 +115,34 @@ namespace BRP
         }
 
         public bool TryTarget(PartView moving,out SnapTarget target)
+            =>FindTarget(moving,new Pose(moving.transform.position,moving.transform.rotation),out target,SnapTolerance,35);
+
+        public bool TryVRTarget(PartView moving,out SnapTarget target)
+            =>TryVRTarget(moving,new Pose(moving.transform.position,moving.transform.rotation),out target);
+
+        public bool TryVRTarget(PartView moving,Pose pose,out SnapTarget target)
+            =>FindTarget(moving,pose,out target,VRNodeDistance/Mathf.Max(.001f,assemblyRoot.lossyScale.x),180);
+
+        bool FindTarget(PartView moving,Pose pose,out SnapTarget target,float tolerance,float maxAngle)
         {
-            float best=SnapTolerance;
+            float best=tolerance;
             target=default;
             bool found=false;
             var d=moving.Definition;
+            occupiedPorts.Clear();
+            foreach(var part in Blueprint.parts) if(part.parentId!=null) occupiedPorts.Add((part.parentId,part.port));
             void Consider(SnapTarget next)
             {
-                Vector3 movingConnector=moving.transform.position;
+                Vector3 movingConnector=pose.position;
                 Vector3 targetConnector=next.position;
                 if(next.port==1)
                 {
-                    movingConnector=moving.transform.TransformPoint(Vector3.up*d.height);
+                    movingConnector=pose.position+pose.rotation*Vector3.Scale(Vector3.up*d.height,moving.transform.lossyScale);
                     targetConnector+=next.rotation*Vector3.up*d.height;
                 }
                 float distance=Vector3.Distance(assemblyRoot.InverseTransformPoint(movingConnector),targetConnector);
                 if(distance>=best) return;
-                if(Quaternion.Angle(moving.transform.localRotation,next.rotation)>35) return;
+                if(Quaternion.Angle(Quaternion.Inverse(assemblyRoot.rotation)*pose.rotation,next.rotation)>maxAngle) return;
                 best=distance;targetLocal=next;found=true;
             }
             targetLocal=default;
@@ -138,7 +157,7 @@ namespace BRP
                     for(int i=0;i<8;i++)
                     {
                         int port=2+i;
-                        if(Blueprint.parts.Any(p=>p.parentId==existing.instanceId&&p.port==port)) continue;
+                        if(occupiedPorts.Contains((existing.instanceId,port))) continue;
                         float angle=i*45;
                         var q=Quaternion.Euler(0,angle,0);
                         var position=existing.position+q*new Vector3(parent.radius,.15f+parent.height*.25f,0);
@@ -148,7 +167,7 @@ namespace BRP
                 else
                 {
                     int port=d.mount==MountType.Engine&&parent.kind!=PartKind.StackDecoupler&&parent.kind!=PartKind.Adapter?1:0;
-                    if(Blueprint.parts.Any(p=>p.parentId==existing.instanceId&&p.port==port)) continue;
+                    if(occupiedPorts.Contains((existing.instanceId,port))) continue;
                     var position=existing.position+Vector3.up*(port==0?parent.height:-d.height);
                     Consider(new SnapTarget(existing.instanceId,port,position,Quaternion.identity));
                 }
@@ -157,6 +176,70 @@ namespace BRP
             return found;
         }
         SnapTarget targetLocal;
+
+        public bool TryVRGridPosition(PartView moving,Pose pose,out Vector3 position)
+        {
+            position=pose.position;
+            moving.GetComponentsInChildren(false,gridGroup);
+            if(gridGroup.Count==0) return false;
+            var pivot=moving.transform.position;
+            var delta=pose.rotation*Quaternion.Inverse(moving.transform.rotation);
+            float horizontalExtent=0,bottomExtent=0,topExtent=0;
+            foreach(var item in gridGroup)
+            {
+                var box=item.GetComponent<BoxCollider>();
+                if(box==null||!box.enabled) continue;
+                for(int i=0;i<8;i++)
+                {
+                    var corner=box.center+Vector3.Scale(box.size*.5f,new Vector3((i&1)==0?-1:1,(i&2)==0?-1:1,(i&4)==0?-1:1));
+                    var cornerOffset=delta*(box.transform.TransformPoint(corner)-pivot);
+                    horizontalExtent=Mathf.Max(horizontalExtent,new Vector2(cornerOffset.x,cornerOffset.z).magnitude);
+                    bottomExtent=Mathf.Max(bottomExtent,-cornerOffset.y);topExtent=Mathf.Max(topExtent,cornerOffset.y);
+                }
+            }
+            float radius=VRGridRadius-horizontalExtent;
+            float minY=VRGridFloor+bottomExtent;
+            float maxY=VRGridCeiling-topExtent;
+            if(radius<0||maxY<minY) return false;
+            var origin=assemblyRoot.position;
+            var desired=pose.position;
+            var offset=new Vector2(desired.x-origin.x,desired.z-origin.z);
+            if(offset.magnitude>VRGridRadius+VRGridReach||desired.y<VRGridFloor-VRGridReach||desired.y>VRGridCeiling+VRGridReach) return false;
+            var grid=new Vector2(Mathf.Round(offset.x/VRGridStep),Mathf.Round(offset.y/VRGridStep));
+            while(grid.sqrMagnitude*VRGridStep*VRGridStep>radius*radius)
+            {
+                if(Mathf.Abs(grid.x)>=Mathf.Abs(grid.y)) grid.x-=Mathf.Sign(grid.x);
+                else grid.y-=Mathf.Sign(grid.y);
+            }
+            float gridY=Mathf.Round((desired.y-VRGridFloor)/VRGridStep);
+            float minGridY=Mathf.Ceil((minY-VRGridFloor)/VRGridStep);
+            float maxGridY=Mathf.Floor((maxY-VRGridFloor)/VRGridStep);
+            if(minGridY>maxGridY) return false;
+            position=new Vector3(origin.x+grid.x*VRGridStep,VRGridFloor+Mathf.Clamp(gridY,minGridY,maxGridY)*VRGridStep,origin.z+grid.y*VRGridStep);
+            if(Vector3.Distance(position,desired)>VRGridReach) return false;
+            foreach(var item in gridGroup)
+            {
+                var box=item.GetComponent<BoxCollider>();
+                if(box==null||!box.enabled) continue;
+                var itemPosition=position+delta*(item.transform.position-pivot);
+                var itemRotation=delta*item.transform.rotation;
+                var itemCenter=itemPosition+itemRotation*Vector3.Scale(box.center,box.transform.lossyScale);
+                float itemRadius=Vector3.Scale(box.size*.5f,box.transform.lossyScale).magnitude;
+                foreach(var other in views)
+                {
+                    if(other==null||other==moving||other.transform.IsChildOf(moving.transform)) continue;
+                    var otherBox=other.GetComponent<BoxCollider>();
+                    if(otherBox==null||!otherBox.enabled||!other.gameObject.activeInHierarchy) continue;
+                    var otherCenter=otherBox.transform.TransformPoint(otherBox.center);
+                    float otherRadius=Vector3.Scale(otherBox.size*.5f,otherBox.transform.lossyScale).magnitude;
+                    float combinedRadius=itemRadius+otherRadius;
+                    if((itemCenter-otherCenter).sqrMagnitude>combinedRadius*combinedRadius) continue;
+                    if(Physics.ComputePenetration(box,itemPosition,itemRotation,otherBox,other.transform.position,other.transform.rotation,out _,out float distance)&&distance>.005f)
+                        return false;
+                }
+            }
+            return true;
+        }
 
         public void Attach(PartView view,SnapTarget target,IReadOnlyList<PartView> group=null)
         {

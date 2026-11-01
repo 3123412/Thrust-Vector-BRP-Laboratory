@@ -510,6 +510,7 @@ namespace BRP
                 yield return null;
             }
             vrEnabled=true;mainCamera.gameObject.SetActive(false);
+            if(GetComponent<VRAssemblyGrid>()==null) gameObject.AddComponent<VRAssemblyGrid>().Initialize(this);
             Application.targetFrameRate=-1;QualitySettings.vSyncCount=0;
             if(xrRig==null) xrRig=Instantiate(Assets.xrRig);
             xrRig.SetActive(true);xrRig.transform.position=new Vector3(0,0,-2.4f);
