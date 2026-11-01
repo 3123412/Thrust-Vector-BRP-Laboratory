@@ -37,6 +37,7 @@ namespace BRP
         bool wasFlying;
         Transform vrCamera;
         RectTransform vrCaptions,vrHeadControls;
+        readonly List<Material> vrCaptionMaterials=new List<Material>();
         PartCategory category;
         public bool ModalOpen=>modal!=null||(homePanel!=null&&homePanel.gameObject.activeSelf);
         public bool MapView=>mapView;
@@ -58,9 +59,9 @@ namespace BRP
             var navigation=root.Find("Navigation") as RectTransform;
             if(navigation!=null) navigation.gameObject.SetActive(false);
             if(vrMenu==null) vrMenu=UiTheme.Command(root,"Меню",24,20,180,64,"home").gameObject;
-            AttachVRControl(vrMenu.GetComponent<RectTransform>(),new Vector2(60,-10),new Vector2(240,72));
-            if(scaleDown!=null) AttachVRControl(scaleDown.GetComponent<RectTransform>(),new Vector2(970,-10),new Vector2(72,72));
-            if(scaleUp!=null) AttachVRControl(scaleUp.GetComponent<RectTransform>(),new Vector2(1060,-10),new Vector2(72,72));
+            AttachVRControl(vrMenu.GetComponent<RectTransform>(),new Vector2(40,-10),new Vector2(240,72));
+            if(scaleDown!=null) AttachVRControl(scaleDown.GetComponent<RectTransform>(),new Vector2(1600,-10),new Vector2(72,72));
+            if(scaleUp!=null) AttachVRControl(scaleUp.GetComponent<RectTransform>(),new Vector2(1695,-10),new Vector2(72,72));
             vrMenu.SetActive(!ModalOpen);
             if(mapTools!=null) PlaceVRPanel(mapTools,373,771);
             if(flightMenu!=null) PlaceVRPanel(flightMenu.GetComponent<RectTransform>(),1720,20);
@@ -76,7 +77,7 @@ namespace BRP
             missionTitle.gameObject.SetActive(false);missionGoal.gameObject.SetActive(false);
             foreach(var label in FindObjectsByType<TMP_Text>(FindObjectsSortMode.None))
             {
-                if(label.text.Contains("ОПЫТНОЕ КОНСТРУКТОРСКОЕ БЮРО")||label.text.Contains("01    /    СБОРКА")||label.text.Contains("ВНИМАНИЕ\nИСПЫТАТЕЛЬНАЯ ЗОНА"))
+                if(label.text.Contains("ОПЫТНОЕ КОНСТРУКТОРСКОЕ БЮРО")||label.text.Contains("01    /    СБОРКА")||label.text.Contains("ВНИМАНИЕ\nИСПЫТАТЕЛЬНАЯ ЗОНА")||label.text.Contains("65 ЛЕТ ПЕРВОМУ ПОЛЁТУ"))
                     label.gameObject.SetActive(false);
             }
             GetComponent<GraphicRaycaster>().enabled=false;
@@ -92,7 +93,7 @@ namespace BRP
                 var observer=new Vector3(bench.x,1.6f,bench.z-2.4f);
                 PlaceWorkshopPanel(left,new Vector3(bench.x-1.3f,1.95f,bench.z),observer);
                 PlaceWorkshopPanel(right,new Vector3(bench.x+1.3f,1.95f,bench.z),observer);
-                PlaceWorkshopControls(new Vector3(bench.x+1.3f,1.055f,bench.z));
+                PlaceWorkshopControls(new Vector3(bench.x,.98f,bench.z-1.08f));
                 return;
             }
             var forward=Vector3.ProjectOnPlane(vrCamera.forward,Vector3.up).normalized;
@@ -119,22 +120,15 @@ namespace BRP
 
         void PlaceWorkshopControls(Vector3 center)
         {
-            bottom.sizeDelta=new Vector2(520,400);
             var buttons=bottom.GetComponentsInChildren<LabButton>(true);
-            for(int i=0;i<buttons.Length;i++)
+            foreach(var button in buttons)
             {
-                var rect=buttons[i].GetComponent<RectTransform>();
-                rect.anchoredPosition=new Vector2(10+(i%2)*255,-(10+(i/2)*96));rect.sizeDelta=new Vector2(245,84);
-                var label=buttons[i].GetComponentInChildren<TextMeshProUGUI>();
-                if(label!=null) {label.rectTransform.sizeDelta=new Vector2(233,84);label.fontSize=21;label.alignment=TextAlignmentOptions.Center;}
-                if(buttons[i].accent!=null)
-                {
-                    var accent=buttons[i].accent.rectTransform;accent.anchoredPosition=new Vector2(0,-82);accent.sizeDelta=new Vector2(245,2);
-                }
+                var label=button.GetComponentInChildren<TextMeshProUGUI>();
+                if(label!=null) {label.enableAutoSizing=true;label.fontSizeMin=16;label.fontSizeMax=22;label.alignment=TextAlignmentOptions.Center;}
             }
-            var rotation=Quaternion.Euler(90,0,0);bottom.localScale=Vector3.one*.85f;bottom.rotation=rotation;
-            float scale=root.lossyScale.x*.85f;
-            bottom.position=center+rotation*new Vector3(-bottom.rect.width*scale*.5f,bottom.rect.height*scale*.5f,0);
+            bottom.localScale=Vector3.one;bottom.rotation=Quaternion.identity;
+            float scale=root.lossyScale.x;
+            bottom.position=center+new Vector3(-bottom.rect.width*scale*.5f,bottom.rect.height*scale*.5f,0);
         }
 
         void AttachVRControl(RectTransform panel,Vector2 position,Vector2 size)
@@ -143,8 +137,8 @@ namespace BRP
             {
                 var overlay=new GameObject("VR head controls",typeof(RectTransform),typeof(Canvas));overlay.layer=gameObject.layer;
                 vrHeadControls=overlay.GetComponent<RectTransform>();vrHeadControls.SetParent(vrCamera,false);
-                vrHeadControls.localPosition=new Vector3(0,.3f,1.1f);vrHeadControls.localRotation=Quaternion.identity;
-                vrHeadControls.localScale=Vector3.one*.001f;vrHeadControls.sizeDelta=new Vector2(1200,100);
+                vrHeadControls.localPosition=new Vector3(0,.5f,1.1f);vrHeadControls.localRotation=Quaternion.identity;
+                vrHeadControls.localScale=Vector3.one*.001f;vrHeadControls.sizeDelta=new Vector2(2000,100);
                 var headCanvas=overlay.GetComponent<Canvas>();headCanvas.renderMode=RenderMode.WorldSpace;headCanvas.worldCamera=canvas.worldCamera;
                 overlay.AddComponent<UnityEngine.XR.Interaction.Toolkit.UI.TrackedDeviceGraphicRaycaster>();
             }
@@ -169,9 +163,21 @@ namespace BRP
                 vrCaptions.localPosition=new Vector3(0,-.28f,1f);vrCaptions.localRotation=Quaternion.identity;
                 vrCaptions.localScale=Vector3.one*.0014f;vrCaptions.sizeDelta=new Vector2(1200,200);
                 var captionCanvas=overlay.GetComponent<Canvas>();captionCanvas.renderMode=RenderMode.WorldSpace;captionCanvas.worldCamera=canvas.worldCamera;
+                captionCanvas.overrideSorting=true;captionCanvas.sortingOrder=1000;
             }
             panel.SetParent(vrCaptions,false);panel.anchorMin=panel.anchorMax=new Vector2(0,1);panel.pivot=new Vector2(0,1);
             panel.anchoredPosition=position;panel.localRotation=Quaternion.identity;panel.localScale=Vector3.one;
+            var label=panel.GetComponent<TextMeshProUGUI>();var overlayMaterial=Resources.Load<Material>("BRP/VRCaptionOverlay");
+            if(label!=null&&overlayMaterial!=null&&label.fontSharedMaterial!=null&&label.fontSharedMaterial.shader!=overlayMaterial.shader)
+            {
+                var material=new Material(label.fontSharedMaterial);material.shader=overlayMaterial.shader;
+                material.renderQueue=(int)UnityEngine.Rendering.RenderQueue.Overlay;label.fontSharedMaterial=material;vrCaptionMaterials.Add(material);
+            }
+        }
+
+        void OnDestroy()
+        {
+            foreach(var material in vrCaptionMaterials) if(material!=null) Destroy(material);
         }
 
         public void SetAssemblyPanelsVisible(bool visible)
