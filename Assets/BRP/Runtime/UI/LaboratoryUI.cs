@@ -158,7 +158,6 @@ namespace BRP
             homeContinue=UiTheme.Command(homePanel,"Продолжить программу  →",36,535,570,58,"campaign",0,true).gameObject;
             UiTheme.Command(homePanel,"Свободный режим",36,608,276,44,"sandbox");
             UiTheme.Command(homePanel,"Сборка на время",330,608,276,44,"trial");
-            UiTheme.Text(homePanel,"VR определяется автоматически при запуске",36,671,570,26,17,UiTheme.Muted);
             UiTheme.Command(homePanel,"Лунная экспедиция",36,710,276,42,"lunar_menu");
             UiTheme.Command(homePanel,"Завершить игру",330,710,276,42,"quit");
         }
@@ -606,7 +605,7 @@ namespace BRP
         }
         public void ShowSettings()
         {
-            var r=Dialog("НАСТРОЙКИ",820,game.VREnabled?910:850);
+            var r=Dialog("НАСТРОЙКИ",820,game.VREnabled?970:850);
             UiTheme.Text(r,"Громкость",35,110,740,30,22);
             UiTheme.Button(r,"Тише",35,160,230,48,()=>game.SetVolume(-.1f));
             UiTheme.Button(r,"Громче",285,160,230,48,()=>game.SetVolume(.1f));
@@ -634,9 +633,17 @@ namespace BRP
             {
                 UiTheme.Button(r,"Подстроить рабочее место",35,657,745,45,game.CenterVRWorkspace);
                 UiTheme.Text(r,"Сядьте или встаньте удобно и посмотрите прямо перед собой.",35,708,745,35,18,UiTheme.Muted);
+                var controls=UnityEngine.Object.FindAnyObjectByType<VROperatorControls>();
+                if(controls!=null)
+                {
+                    UiTheme.Text(r,"ПЕРЕМЕЩЕНИЕ В АНГАРЕ",35,748,745,25,18,UiTheme.Cyan);
+                    UiTheme.Button(r,controls.SmoothMovement?"Плавный ход: включён":"Плавный ход: выключен",35,783,235,46,controls.ToggleSmoothMovement);
+                    UiTheme.Button(r,$"Скорость: {controls.MoveSpeed:F1} м/с",287,783,235,46,controls.CycleMoveSpeed);
+                    UiTheme.Button(r,controls.SmoothTurn?"Поворот: плавный":"Поворот: шаговый",535,783,245,46,controls.ToggleTurnMode);
+                    UiTheme.Text(r,"Телепортация доступна лучом контроллера. Шаговый поворот снижает укачивание.",35,833,745,25,16,UiTheme.Muted);
+                }
             }
-            UiTheme.Button(r,"Выйти из игры",35,game.VREnabled?812:740,745,50,()=>Application.Quit());
-            UiTheme.Text(r,game.VREnabled?"Режим OpenXR • контроллеры и пространственный интерфейс":"Режим ПК • VR подключается автоматически",35,game.VREnabled?760:675,745,40,20,UiTheme.Cyan);
+            UiTheme.Button(r,"Выйти из игры",35,game.VREnabled?876:740,745,50,()=>Application.Quit());
         }
         public void ShowHelp()
         {
@@ -646,7 +653,7 @@ namespace BRP
             UiTheme.Text(r,"ПОЛЁТ",35,325,950,30,20,UiTheme.Cyan);
             UiTheme.Text(r,"Shift / Ctrl: тяга. X: выключить. Space: следующая ступень.\nW/S, A/D: наклон. Q/E: крен. P: парашют. B: воздушный тормоз.\nM: карта. T: ускорение времени. F: команды автопилота.\nI/K, J/L, U/O: перемещение двигателями ориентации. Backspace: аварийное спасение.",35,370,970,135,18);
             UiTheme.Text(r,"ИНЖЕНЕРНЫЙ РАСЧЁТ",35,530,950,30,20,UiTheme.Cyan);
-            UiTheme.Text(r,"Тяга должна превышать вес. Центр масс и центр давления определяют устойчивость.\nТопливо меняет массу в полёте. В вакууме рули не работают, нужны двигатели ориентации.\nДля орбиты нужна скорость вдоль поверхности. Тепловой щит и парашют нужны для возвращения.\nВ VR: захват контроллером, луч для панелей, разблокировка установленного узла через меню.",35,575,970,150,18);
+            UiTheme.Text(r,"Тяга должна превышать вес. Центр масс и центр давления определяют устойчивость.\nТопливо меняет массу в полёте. В вакууме рули не работают, нужны двигатели ориентации.\nДля орбиты нужна скорость вдоль поверхности. Тепловой щит и парашют нужны для возвращения.\nВ VR: хват переносит деталь, луч выбирает панели, левый стик перемещает по ангару, правый поворачивает. Телепортируйтесь лучом.",35,575,970,150,18);
         }
         public void ShowResult(string title,string message)
         {

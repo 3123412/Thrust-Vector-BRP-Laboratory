@@ -175,8 +175,9 @@ namespace BRP
             }
             apoLabel.gameObject.SetActive(map);periLabel.gameObject.SetActive(map);craftLabel.gameObject.SetActive(map);
             bool overview=map&&mapView>0;
+            bool showPlanets=!map&&!flight.landed&&!flight.crashed&&flight.Altitude>80000;
             if(companion!=null) companion.SetActive(!map);
-            systemMap.gameObject.SetActive(overview);
+            systemMap.gameObject.SetActive(overview||showPlanets);
             if(overview)
             {
                 planet.SetActive(false);pad.SetActive(false);if(terrain!=null) terrain.SetActive(false);rocketRoot.gameObject.SetActive(false);
@@ -187,6 +188,7 @@ namespace BRP
             }
             else
             {
+                systemMap.RefreshSky(flight,showPlanets);
                 rocketRoot.gameObject.SetActive(true);
                 if(map) UpdateMap(flight,target);else UpdateChase(flight,target);
             }
@@ -245,8 +247,8 @@ namespace BRP
             pad.transform.localRotation=Quaternion.Euler(0,0,(float)(a*180/Math.PI));
             pad.SetActive(!flight.IsLunar&&flight.Altitude<2500);
             planet.transform.rotation=Quaternion.AngleAxis((float)(flight.elapsed*flight.referenceBody.rotationRate*180/Math.PI),Vector3.forward)*Quaternion.Euler(90,0,0);
-            double horizonClearance=Math.Max(100,flight.GroundClearance*flight.referenceBody.radius/PlanetDisplayRadius*ViewScale*1.5);
-            planet.SetActive(flight.Altitude>horizonClearance);
+            double visualSurfaceClearance=PlanetDisplayRadius*Math.Max(0,flight.Altitude)/flight.referenceBody.radius;
+            planet.SetActive(visualSurfaceClearance>32);
             if(companion!=null)
             {
                 var destination=flight.IsLunar?-CelestialBody.MoonPosition(flight.elapsed):CelestialBody.MoonPosition(flight.elapsed);
@@ -255,7 +257,8 @@ namespace BRP
                 bool occulted=projection<0&&projection*projection>flight.position.SqrMagnitude-flight.referenceBody.radius*flight.referenceBody.radius;
                 companion.SetActive(!occulted);
                 companion.transform.localPosition=direction.Float*8000;
-                companion.transform.localScale=Vector3.one*(float)(8000*(flight.IsLunar?CelestialBody.Earth.radius:CelestialBody.Moon.radius)/relative.Magnitude);
+                float apparentRadius=(float)(8000*(flight.IsLunar?CelestialBody.Earth.radius:CelestialBody.Moon.radius)/relative.Magnitude);
+                companion.transform.localScale=Vector3.one*Mathf.Max(apparentRadius,flight.IsLunar?96:48);
             }
             var radial=flight.position.Normalized.Float;
             bool nearLaunch=!flight.IsLunar&&(padPosition-flight.position).Magnitude<2500;

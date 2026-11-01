@@ -12,6 +12,29 @@ namespace BRP
         bool scaling;
         bool controlsFocused=true;
         bool leftButtonsReady,rightButtonsReady;
+        bool smoothMovement=true,smoothTurn;
+        float moveSpeed=1.1f,nextSnapTurn;
+        public bool SmoothMovement=>smoothMovement;
+        public bool SmoothTurn=>smoothTurn;
+        public float MoveSpeed=>moveSpeed;
+        void Start()
+        {
+            smoothMovement=PlayerPrefs.GetInt("BRP.VRSmoothMovement",1)!=0;
+            smoothTurn=PlayerPrefs.GetInt("BRP.VRSmoothTurn",0)!=0;
+            moveSpeed=Mathf.Clamp(PlayerPrefs.GetFloat("BRP.VRMoveSpeed",1.1f),.8f,1.6f);
+        }
+        public void ToggleSmoothMovement()
+        {
+            smoothMovement=!smoothMovement;PlayerPrefs.SetInt("BRP.VRSmoothMovement",smoothMovement?1:0);
+        }
+        public void ToggleTurnMode()
+        {
+            smoothTurn=!smoothTurn;PlayerPrefs.SetInt("BRP.VRSmoothTurn",smoothTurn?1:0);
+        }
+        public void CycleMoveSpeed()
+        {
+            moveSpeed=moveSpeed<.95f?1.1f:moveSpeed<1.4f?1.6f:.8f;PlayerPrefs.SetFloat("BRP.VRMoveSpeed",moveSpeed);
+        }
         void OnDisable() {ReleaseFlightInput();scaling=false;}
         void OnApplicationFocus(bool focused)
         {
@@ -68,6 +91,13 @@ namespace BRP
                 if(ls&&!previousLeftSecondary) game.UI.ShowHome();
                 bool holding=false;
                 foreach(var view in game.Assembly.views) if(view.Grab!=null&&view.Grab.isSelected) {holding=true;break;}
+                left.TryGetFeatureValue(CommonUsages.primary2DAxis,out Vector2 walk);
+                right.TryGetFeatureValue(CommonUsages.primary2DAxis,out Vector2 turn);
+                if(!game.UI.ModalOpen&&!holding&&!scaling)
+                {
+                    if(smoothMovement) Move(walk);
+                    Turn(turn.x);
+                }
                 if(!game.UI.ModalOpen&&!holding&&lp&&rp&&left.TryGetFeatureValue(CommonUsages.devicePosition,out Vector3 a)&&right.TryGetFeatureValue(CommonUsages.devicePosition,out Vector3 b))
                 {
                     float distance=Vector3.Distance(a,b);
@@ -78,6 +108,27 @@ namespace BRP
                 else scaling=false;
             }
             previousLeftPrimary=lp;previousRightPrimary=rp;previousLeftSecondary=ls;previousRightSecondary=rs;
+        }
+        void Move(Vector2 input)
+        {
+            if(input.sqrMagnitude<.04f) return;
+            var forward=Vector3.ProjectOnPlane(game.mainCamera.transform.forward,Vector3.up).normalized;
+            var right=Vector3.ProjectOnPlane(game.mainCamera.transform.right,Vector3.up).normalized;
+            var movement=(forward*input.y+right*input.x)*moveSpeed*Time.unscaledDeltaTime;
+            var controller=game.mainCamera.GetComponentInParent<CharacterController>();
+            if(controller!=null&&controller.enabled) controller.Move(movement);
+            else game.mainCamera.transform.root.position+=movement;
+        }
+        void Turn(float input)
+        {
+            if(Mathf.Abs(input)<.2f) return;
+            var rig=game.mainCamera.transform.root;
+            if(smoothTurn) rig.RotateAround(game.mainCamera.transform.position,Vector3.up,input*75*Time.unscaledDeltaTime);
+            else if(Time.unscaledTime>=nextSnapTurn)
+            {
+                rig.RotateAround(game.mainCamera.transform.position,Vector3.up,Mathf.Sign(input)*30);
+                nextSnapTurn=Time.unscaledTime+.45f;
+            }
         }
     }
 }

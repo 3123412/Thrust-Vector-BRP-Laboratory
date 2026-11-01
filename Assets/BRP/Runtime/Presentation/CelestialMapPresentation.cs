@@ -66,6 +66,22 @@ namespace BRP
         void OnDestroy() {foreach(var material in ownedMaterials) if(material!=null) Destroy(material);}
         public void Focus(int index) {focus=index==0?3:index==1?9:-1;previousView=-1;}
         public void NextBody() {focus=(focus+1)%bodies.Count;zoomScale=1;}
+        public void RefreshSky(FlightBody flight,bool visible)
+        {
+            for(int i=0;i<bodies.Count;i++)
+            {
+                bool show=visible&&i!=3&&i!=9;
+                bodies[i].gameObject.SetActive(show);labels[i].gameObject.SetActive(false);orbits[i].positionCount=0;
+                if(!show) continue;
+                float longitude=i*2.399963f+(float)flight.elapsed*.000012f;
+                float vertical=Mathf.Sin(i*1.37f)*.32f;
+                float planar=Mathf.Sqrt(1-vertical*vertical);
+                bodies[i].localPosition=new Vector3(Mathf.Cos(longitude)*planar,vertical,Mathf.Sin(longitude)*planar)*12000;
+                float radius=Mathf.Lerp(28,58,Mathf.InverseLerp(2,13,sizes[i]));
+                bodies[i].localScale=Vector3.one*radius;
+            }
+            if(rings!=null) rings.gameObject.SetActive(false);
+        }
         public void Refresh(Camera camera,FlightBody flight,int view)
         {
             bool earthMoon=view==1;
@@ -74,6 +90,7 @@ namespace BRP
             {
                 bool visible=!earthMoon||i==3||i==9;
                 bodies[i].gameObject.SetActive(visible);labels[i].gameObject.SetActive(visible);orbits[i].gameObject.SetActive(visible);
+                if(i==6&&rings!=null) rings.gameObject.SetActive(visible&&!earthMoon);
                 if(!visible) continue;
                 float radius=earthMoon?i==3?12:3.27f:sizes[i]*(focus<0?2.4f:1);bodies[i].localScale=Vector3.one*radius;
                 float orbit=distances[i];
