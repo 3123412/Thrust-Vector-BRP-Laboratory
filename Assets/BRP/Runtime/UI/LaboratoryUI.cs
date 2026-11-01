@@ -29,6 +29,7 @@ namespace BRP
         [SerializeField] RectTransform navigation,mapTools;
         [SerializeField] GameObject flightMenu,atmosphericPanel,ascentButton,recoveryButton;
         [SerializeField] GameObject homeContinue;
+        GameObject vrMenu;
         [SerializeField] TextMeshProUGUI mapHeading;
         LabButton[] flightBindings;
         Action dialogClosed;
@@ -41,7 +42,7 @@ namespace BRP
 
         public void ConfigureVR(Camera camera)
         {
-            canvas.renderMode=RenderMode.ScreenSpaceCamera;canvas.worldCamera=camera;canvas.planeDistance=1.15f;
+            canvas.renderMode=RenderMode.ScreenSpaceCamera;canvas.worldCamera=camera;canvas.planeDistance=Mathf.Max(camera.nearClipPlane+.02f,.12f);
             vrCamera=camera.transform;
             root.SetParent(null,false);root.localPosition=Vector3.zero;root.localRotation=Quaternion.identity;
             root.sizeDelta=new Vector2(1920,1080);root.localScale=Vector3.one;
@@ -56,6 +57,8 @@ namespace BRP
             PlaceVRPanel(flightActions,373,840);
             var navigation=root.Find("Navigation") as RectTransform;
             if(navigation!=null) navigation.gameObject.SetActive(false);
+            if(vrMenu==null) vrMenu=UiTheme.Command(root,"Меню",24,20,180,64,"home").gameObject;
+            vrMenu.SetActive(!ModalOpen);
             if(mapTools!=null) PlaceVRPanel(mapTools,373,771);
             if(flightMenu!=null) PlaceVRPanel(flightMenu.GetComponent<RectTransform>(),1720,20);
             PlaceVRPanel(toast.rectTransform,430,220);
@@ -455,6 +458,7 @@ namespace BRP
             navigationExpanded=false;
             if(modal!=null) {Destroy(modal.gameObject);modal=null;}
             if(homePanel!=null) homePanel.gameObject.SetActive(false);
+            if(vrMenu!=null) vrMenu.SetActive(game.VREnabled);
             if(left!=null) SetFlight(game.IsFlying);
         }
         public void ShowHome()
@@ -463,6 +467,7 @@ namespace BRP
             foreach(var label in homePanel.GetComponentsInChildren<TextMeshProUGUI>(true))
                 if(label.text=="VR определяется автоматически при запуске") Destroy(label.gameObject);
             homePanel.gameObject.SetActive(true);
+            if(vrMenu!=null) vrMenu.SetActive(false);
             foreach(var panel in new[]{left,right,bottom,flightPanel,flightSystems,flightActions,mapTools})
                 if(panel!=null) panel.gameObject.SetActive(false);
             if(homeContinue!=null) homeContinue.GetComponentInChildren<TextMeshProUGUI>().text=game.IsFlying?"Продолжить полёт  →":"Продолжить программу  →";
